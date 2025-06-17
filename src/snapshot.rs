@@ -72,10 +72,24 @@ impl SnapshotManager {
             }
         }
 
-        // 生成快照ID（基于时间戳的短哈希）
+        // 生成快照ID（基于时间戳、随机数和内容的哈希）
         let timestamp = chrono::Utc::now();
-        let snapshot_id = format!("{:x}", 
-            timestamp.timestamp_millis() as u64).chars().take(6).collect::<String>();
+        use std::collections::hash_map::DefaultHasher;
+        use std::hash::{Hash, Hasher};
+        
+        let mut hasher = DefaultHasher::new();
+        timestamp.timestamp_nanos_opt().unwrap_or(0).hash(&mut hasher);
+        message.hash(&mut hasher);
+        std::process::id().hash(&mut hasher);  // 进程ID增加唯一性
+        
+        // 为了进一步避免冲突，加入一些随机性
+        use std::time::{SystemTime, UNIX_EPOCH};
+        let nanos = SystemTime::now().duration_since(UNIX_EPOCH)
+            .unwrap_or_default().subsec_nanos();
+        nanos.hash(&mut hasher);
+        
+        let hash = hasher.finish();
+        let snapshot_id = format!("{:x}", hash).chars().take(8).collect::<String>();
 
         // 创建快照元数据
         let snapshot = SnapshotMetadata {
