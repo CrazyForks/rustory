@@ -1,0 +1,105 @@
+use anyhow::Result;
+use std::env;
+use std::path::Path;
+
+use crate::{Repository, utils};
+
+pub struct RollbackCommand;
+
+impl RollbackCommand {
+    pub fn execute(snapshot_id: String, restore: bool, keep_index: bool) -> Result<()> {
+        let current_dir = env::current_dir()?;
+        let root = Repository::find_root(&current_dir)?;
+        let repo = Repository::new(root.clone())?;
+
+        if restore {
+            // 直接恢复到工作区
+            Self::restore_to_working_dir(&repo, &root, &snapshot_id, keep_index)?;
+        } else {
+            // 导出到备份目录
+            Self::export_to_backup(&repo, &root, &snapshot_id)?;
+        }
+
+        Ok(())
+    }
+
+    fn restore_to_working_dir(
+        repo: &Repository,
+        root: &Path,
+        snapshot_id: &str,
+        keep_index: bool,
+    ) -> Result<()> {
+        // 创建备份
+        let backup_dir = root.join(utils::create_backup_name());
+        std::fs::create_dir_all(&backup_dir)?;
+
+        // 备份当前工作区
+        for entry in walkdir::WalkDir::new(root)
+            .follow_links(false)
+            .into_iter()
+            .filter_map(Result::ok)
+        {
+            let path = entry.path();
+            if path.is_file() {
+                let relative_path = path.strip_prefix(root)?;
+                
+                // 跳过 .rustory 目录
+                if relative_path.starts_with(".rustory") {
+                    continue;
+                }
+
+                let backup_path = backup_dir.join(relative_path);
+                if let Some(parent) = backup_path.parent() {
+                    std::fs::create_dir_all(parent)?;
+                }
+                std::fs::copy(path, backup_path)?;
+            }
+        }
+
+        // 清空工作区（除了 .rustory）
+        for entry in walkdir::WalkDir::new(root)
+            .follow_links(false)
+            .into_iter()
+            .filter_map(Result::ok)
+        {
+            let path = entry.path();
+            if path.is_file() {
+                let relative_path = path.strip_prefix(root)?;
+                
+                // 跳过 .rustory 目录
+                if relative_path.starts_with(".rustory") {
+                    continue;
+                }
+
+                std::fs::remove_file(path)?;
+            }
+        }
+
+        // 恢复快照内容
+        repo.snapshot_manager.restore_snapshot(snapshot_id, root, &repo.object_store)?;
+
+        // 更新索引（如果不保持索引）
+        if !keep_index {
+            let snapshot = repo.snapshot_manager.load_snapshot(snapshot_id)?;
+            let index = crate::Index {
+                files: snapshot.files,
+            };
+            repo.index_manager.save(&index)?;
+        }
+
+        println!("Restored snapshot {} to working directory", snapshot_id);
+        println!("Original files backed up to {}", backup_dir.display());
+
+        Ok(())
+    }
+
+    fn export_to_backup(repo: &Repository, root: &Path, snapshot_id: &str) -> Result<()> {
+        let backup_dir = root.join(utils::create_backup_name());
+        
+        repo.snapshot_manager.restore_snapshot(snapshot_id, &backup_dir, &repo.object_store)?;
+
+        println!("Exported snapshot {} to {}", snapshot_id, backup_dir.display());
+
+        Ok(())
+    }
+}
