@@ -144,70 +144,11 @@ jobs:
             cp "$file" release/
           done
 
-      - name: Create release notes
-        id: release_notes
-        run: |
-          echo "## 下载和校验" > release_notes.md
-          echo "" >> release_notes.md
-          echo "### Windows" >> release_notes.md
-          for file in release/rustory-*-pc-windows-*.zip; do
-            if [[ -f "$file" ]]; then
-              basename_file=$(basename "$file")
-              target=$(echo "$basename_file" | sed 's/rustory-\(.*\)\.zip/\1/')
-              sha256_file="${file}.sha256"
-              if [[ -f "$sha256_file" ]]; then
-                sha256=$(cat "$sha256_file")
-                echo "- **$target**: [\`$basename_file\`]($basename_file) (SHA256: \`$sha256\`)" >> release_notes.md
-              fi
-            fi
-          done
-          echo "" >> release_notes.md
-          echo "### macOS" >> release_notes.md
-          for file in release/rustory-*-apple-*.tar.gz; do
-            if [[ -f "$file" ]]; then
-              basename_file=$(basename "$file")
-              target=$(echo "$basename_file" | sed 's/rustory-\(.*\)\.tar\.gz/\1/')
-              sha256_file="${file}.sha256"
-              if [[ -f "$sha256_file" ]]; then
-                sha256=$(cat "$sha256_file")
-                echo "- **$target**: [\`$basename_file\`]($basename_file) (SHA256: \`$sha256\`)" >> release_notes.md
-              fi
-            fi
-          done
-          echo "" >> release_notes.md
-          echo "### Linux" >> release_notes.md
-          for file in release/rustory-*-unknown-linux-*.tar.gz; do
-            if [[ -f "$file" ]]; then
-              basename_file=$(basename "$file")
-              target=$(echo "$basename_file" | sed 's/rustory-\(.*\)\.tar\.gz/\1/')
-              sha256_file="${file}.sha256"
-              if [[ -f "$sha256_file" ]]; then
-                sha256=$(cat "$sha256_file")
-                echo "- **$target**: [\`$basename_file\`]($basename_file) (SHA256: \`$sha256\`)" >> release_notes.md
-              fi
-            fi
-          done
-          echo "" >> release_notes.md
-          echo "### 校验方法" >> release_notes.md
-          echo "" >> release_notes.md
-          echo "**Windows (PowerShell):**" >> release_notes.md
-          echo '```powershell' >> release_notes.md
-          echo 'Get-FileHash -Algorithm SHA256 rustory-*.zip' >> release_notes.md
-          echo '```' >> release_notes.md
-          echo "" >> release_notes.md
-          echo "**macOS/Linux:**" >> release_notes.md
-          echo '```bash' >> release_notes.md
-          echo 'shasum -a 256 rustory-*.tar.gz' >> release_notes.md
-          echo '# 或者' >> release_notes.md
-          echo 'sha256sum rustory-*.tar.gz' >> release_notes.md
-          echo '```' >> release_notes.md
-
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
             release/*
-          body_path: release_notes.md
           draft: false
           prerelease: false
         env:
