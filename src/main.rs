@@ -48,6 +48,19 @@ fn main() {
         .subcommand(
             Command::new("status")
                 .about("Show working directory status")
+                .arg(
+                    Arg::new("verbose")
+                        .short('v')
+                        .long("verbose")
+                        .help("Show verbose output")
+                        .action(clap::ArgAction::SetTrue)
+                )
+                .arg(
+                    Arg::new("json")
+                        .long("json")
+                        .help("Output in JSON format")
+                        .action(clap::ArgAction::SetTrue)
+                )
         )
         .subcommand(
             Command::new("diff")
@@ -170,8 +183,10 @@ fn main() {
             let json = sub_matches.get_flag("json");
             HistoryCommand::execute(json)
         }
-        Some(("status", _)) => {
-            StatusCommand::execute()
+        Some(("status", sub_matches)) => {
+            let verbose = sub_matches.get_flag("verbose");
+            let json = sub_matches.get_flag("json");
+            StatusCommand::execute(verbose, json)
         }
         Some(("diff", sub_matches)) => {
             let id1 = sub_matches.get_one::<String>("id1").cloned();
