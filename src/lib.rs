@@ -8,11 +8,9 @@ pub mod diff_engine;
 pub mod index;
 pub mod objects;
 pub mod repository;
-pub mod security;
 pub mod snapshot;
 pub mod stats;
 pub mod utils;
-pub mod workflow;
 
 pub use repository::Repository;
 

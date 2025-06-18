@@ -165,6 +165,26 @@ fn main() {
                         .help("Remove snapshots older than configured retention period")
                         .action(clap::ArgAction::SetTrue)
                 )
+        )
+        .subcommand(
+            Command::new("stats")
+                .about("Show repository statistics")
+                .arg(
+                    Arg::new("json")
+                        .long("json")
+                        .help("Output in JSON format")
+                        .action(clap::ArgAction::SetTrue)
+                )
+        )
+        .subcommand(
+            Command::new("verify")
+                .about("Verify repository integrity")
+                .arg(
+                    Arg::new("fix")
+                        .long("fix")
+                        .help("Attempt to fix integrity issues")
+                        .action(clap::ArgAction::SetTrue)
+                )
         );
 
     let matches = app.get_matches();
@@ -218,7 +238,15 @@ fn main() {
             let dry_run = sub_matches.get_flag("dry-run");
             let aggressive = sub_matches.get_flag("aggressive");
             let prune_expired = sub_matches.get_flag("prune-expired");
-            GcCommand::execute(dry_run, aggressive, prune_expired)
+            UtilsCommand::gc(dry_run, aggressive, prune_expired)
+        }
+        Some(("stats", sub_matches)) => {
+            let json = sub_matches.get_flag("json");
+            UtilsCommand::stats(json)
+        }
+        Some(("verify", sub_matches)) => {
+            let fix = sub_matches.get_flag("fix");
+            UtilsCommand::verify(fix)
         }
         _ => {
             eprintln!("No subcommand provided. Use --help for usage information.");
