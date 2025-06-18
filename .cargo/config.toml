@@ -1,0 +1,30 @@
+# Cargo configuration for cross-compilation
+
+[build]
+# Uncomment to use a specific target by default
+# target = "x86_64-unknown-linux-gnu"
+
+[target.aarch64-unknown-linux-gnu]
+# This will be set by the GitHub Actions workflow
+# linker = "aarch64-linux-gnu-gcc"
+
+[target.aarch64-pc-windows-msvc]
+# Windows ARM64 cross-compilation is handled by the Rust toolchain
+
+[target.aarch64-apple-darwin]
+# macOS ARM64 cross-compilation is handled by the Rust toolchain
+
+# Release profile optimizations
+[profile.release]
+# Enable optimizations
+opt-level = 3
+# Include debug info for better stack traces
+debug = false
+# Link Time Optimization
+lto = true
+# Reduce code size
+codegen-units = 1
+# Panic strategy
+panic = "abort"
+# Strip symbols to reduce binary size
+strip = true

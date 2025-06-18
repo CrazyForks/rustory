@@ -1,0 +1,211 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    name: Build ${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          # Windows
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+            exe: .exe
+          - target: aarch64-pc-windows-msvc
+            os: windows-latest
+            exe: .exe
+          # macOS
+          - target: x86_64-apple-darwin
+            os: macos-latest
+            exe: ""
+          - target: aarch64-apple-darwin
+            os: macos-latest
+            exe: ""
+          # Linux
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+            exe: ""
+          - target: aarch64-unknown-linux-gnu
+            os: ubuntu-latest
+            exe: ""
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Install cross-compilation tools (Linux)
+        if: matrix.os == 'ubuntu-latest' && matrix.target == 'aarch64-unknown-linux-gnu'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-aarch64-linux-gnu
+
+      - name: Configure cross-compilation (Linux ARM64)
+        if: matrix.os == 'ubuntu-latest' && matrix.target == 'aarch64-unknown-linux-gnu'
+        run: |
+          echo '[target.aarch64-unknown-linux-gnu]' >> ~/.cargo/config.toml
+          echo 'linker = "aarch64-linux-gnu-gcc"' >> ~/.cargo/config.toml
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ matrix.target }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-${{ matrix.target }}-
+            ${{ runner.os }}-cargo-
+
+      - name: Build binary
+        run: cargo build --release --target ${{ matrix.target }}
+
+      - name: Create archive name
+        id: archive
+        shell: bash
+        run: |
+          if [[ "${{ matrix.target }}" == *"windows"* ]]; then
+            echo "name=rustory-${{ matrix.target }}.zip" >> $GITHUB_OUTPUT
+          else
+            echo "name=rustory-${{ matrix.target }}.tar.gz" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create archive (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: bash
+        run: |
+          cd target/${{ matrix.target }}/release
+          7z a ../../../${{ steps.archive.outputs.name }} rustory${{ matrix.exe }}
+
+      - name: Create archive (Unix)
+        if: matrix.os != 'windows-latest'
+        run: |
+          cd target/${{ matrix.target }}/release
+          tar -czf ../../../${{ steps.archive.outputs.name }} rustory${{ matrix.exe }}
+
+      - name: Generate SHA256
+        id: sha256
+        shell: bash
+        run: |
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            sha256sum ${{ steps.archive.outputs.name }} | cut -d ' ' -f 1 > ${{ steps.archive.outputs.name }}.sha256
+          else
+            shasum -a 256 ${{ steps.archive.outputs.name }} | cut -d ' ' -f 1 > ${{ steps.archive.outputs.name }}.sha256
+          fi
+          echo "hash=$(cat ${{ steps.archive.outputs.name }}.sha256)" >> $GITHUB_OUTPUT
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.archive.outputs.name }}
+          path: |
+            ${{ steps.archive.outputs.name }}
+            ${{ steps.archive.outputs.name }}.sha256
+
+  release:
+    name: Create Release
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Display structure of downloaded files
+        run: ls -la artifacts/
+
+      - name: Prepare release files
+        run: |
+          mkdir -p release
+          find artifacts -name "*.zip" -o -name "*.tar.gz" -o -name "*.sha256" | while read file; do
+            cp "$file" release/
+          done
+
+      - name: Create release notes
+        id: release_notes
+        run: |
+          echo "## 下载和校验" > release_notes.md
+          echo "" >> release_notes.md
+          echo "### Windows" >> release_notes.md
+          for file in release/rustory-*-pc-windows-*.zip; do
+            if [[ -f "$file" ]]; then
+              basename_file=$(basename "$file")
+              target=$(echo "$basename_file" | sed 's/rustory-\(.*\)\.zip/\1/')
+              sha256_file="${file}.sha256"
+              if [[ -f "$sha256_file" ]]; then
+                sha256=$(cat "$sha256_file")
+                echo "- **$target**: [\`$basename_file\`]($basename_file) (SHA256: \`$sha256\`)" >> release_notes.md
+              fi
+            fi
+          done
+          echo "" >> release_notes.md
+          echo "### macOS" >> release_notes.md
+          for file in release/rustory-*-apple-*.tar.gz; do
+            if [[ -f "$file" ]]; then
+              basename_file=$(basename "$file")
+              target=$(echo "$basename_file" | sed 's/rustory-\(.*\)\.tar\.gz/\1/')
+              sha256_file="${file}.sha256"
+              if [[ -f "$sha256_file" ]]; then
+                sha256=$(cat "$sha256_file")
+                echo "- **$target**: [\`$basename_file\`]($basename_file) (SHA256: \`$sha256\`)" >> release_notes.md
+              fi
+            fi
+          done
+          echo "" >> release_notes.md
+          echo "### Linux" >> release_notes.md
+          for file in release/rustory-*-unknown-linux-*.tar.gz; do
+            if [[ -f "$file" ]]; then
+              basename_file=$(basename "$file")
+              target=$(echo "$basename_file" | sed 's/rustory-\(.*\)\.tar\.gz/\1/')
+              sha256_file="${file}.sha256"
+              if [[ -f "$sha256_file" ]]; then
+                sha256=$(cat "$sha256_file")
+                echo "- **$target**: [\`$basename_file\`]($basename_file) (SHA256: \`$sha256\`)" >> release_notes.md
+              fi
+            fi
+          done
+          echo "" >> release_notes.md
+          echo "### 校验方法" >> release_notes.md
+          echo "" >> release_notes.md
+          echo "**Windows (PowerShell):**" >> release_notes.md
+          echo '```powershell' >> release_notes.md
+          echo 'Get-FileHash -Algorithm SHA256 rustory-*.zip' >> release_notes.md
+          echo '```' >> release_notes.md
+          echo "" >> release_notes.md
+          echo "**macOS/Linux:**" >> release_notes.md
+          echo '```bash' >> release_notes.md
+          echo 'shasum -a 256 rustory-*.tar.gz' >> release_notes.md
+          echo '# 或者' >> release_notes.md
+          echo 'sha256sum rustory-*.tar.gz' >> release_notes.md
+          echo '```' >> release_notes.md
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            release/*
+          body_path: release_notes.md
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

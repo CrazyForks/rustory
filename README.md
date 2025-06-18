@@ -27,11 +27,48 @@ Rustory 是一个基于 Rust 的版本控制工具，旨在帮助开发者轻松
 
 ## 📦 安装指南
 
-### 前置要求
+### 方式一：下载预编译二进制文件 (推荐)
+
+从 [GitHub Releases](https://github.com/your-repo/rustory/releases) 页面下载适合您系统的预编译二进制文件：
+
+#### 支持的平台
+- **Windows**: x64、ARM64
+- **macOS**: x64 (Intel)、ARM64 (Apple Silicon)
+- **Linux**: x64、ARM64
+
+#### 下载和校验
+1. 访问 [最新发布页面](https://github.com/your-repo/rustory/releases/latest)
+2. 根据您的系统选择相应的文件：
+   - Windows: `rustory-x86_64-pc-windows-msvc.zip` 或 `rustory-aarch64-pc-windows-msvc.zip`
+   - macOS: `rustory-x86_64-apple-darwin.tar.gz` 或 `rustory-aarch64-apple-darwin.tar.gz`
+   - Linux: `rustory-x86_64-unknown-linux-gnu.tar.gz` 或 `rustory-aarch64-unknown-linux-gnu.tar.gz`
+
+3. **文件完整性校验** (推荐)：
+   ```bash
+   # macOS/Linux
+   shasum -a 256 rustory-*.tar.gz
+   
+   # Windows (PowerShell)
+   Get-FileHash -Algorithm SHA256 rustory-*.zip
+   ```
+   对比下载页面提供的 SHA256 值确保文件完整性。
+
+4. **解压并安装**：
+   ```bash
+   # Linux/macOS
+   tar -xzf rustory-*.tar.gz
+   sudo mv rustory /usr/local/bin/
+   
+   # Windows: 解压 ZIP 文件，将 rustory.exe 移动到 PATH 中的目录
+   ```
+
+### 方式二：从源码编译
+
+#### 前置要求
 - **Rust 版本**: 1.70 或更高
 - **操作系统**: Linux、macOS 或 Windows
 
-### 安装步骤
+#### 编译步骤
 
 1. **确保已安装 Rust 环境**
    ```bash
