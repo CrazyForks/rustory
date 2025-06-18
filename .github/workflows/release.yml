@@ -137,7 +137,7 @@ jobs:
       - name: Prepare release files
         run: |
           mkdir -p release
-          find artifacts -name "*.zip" -o -name "*.tar.gz" -o -name "*.sha256" | while read file; do
+          find artifacts -type f \( -name "*.zip" -o -name "*.tar.gz" -o -name "*.sha256" \) | while read file; do
             cp "$file" release/
           done
 
