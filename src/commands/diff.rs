@@ -25,7 +25,9 @@ impl DiffCommand {
                 Self::diff_snapshots(&repo, &id1, &id2)?;
             }
             (None, Some(_)) => {
-                return Err(anyhow::anyhow!("Invalid arguments: second ID provided without first ID"));
+                return Err(anyhow::anyhow!(
+                    "Invalid arguments: second ID provided without first ID"
+                ));
             }
         }
 
@@ -36,19 +38,20 @@ impl DiffCommand {
         // 创建一个虚拟的忽略匹配器（现在在内部处理）
         let dummy_matcher = ignore::gitignore::GitignoreBuilder::new(root).build()?;
 
-        let (added, modified, deleted) = repo.index_manager
+        let (added, modified, deleted) = repo
+            .index_manager
             .compare_with_current(root, &dummy_matcher)?;
 
         println!("diff --rustory");
-        
+
         for path in &added {
             println!("+ {}", path.display());
         }
-        
+
         for path in &modified {
             println!("~ {}", path.display());
         }
-        
+
         for path in &deleted {
             println!("- {}", path.display());
         }
@@ -56,7 +59,11 @@ impl DiffCommand {
         Ok(())
     }
 
-    fn diff_snapshot_with_working_dir(repo: &Repository, root: &std::path::Path, snapshot_id: &str) -> Result<()> {
+    fn diff_snapshot_with_working_dir(
+        repo: &Repository,
+        root: &std::path::Path,
+        snapshot_id: &str,
+    ) -> Result<()> {
         let snapshot = repo.snapshot_manager.load_snapshot(snapshot_id)?;
         let current_index = {
             let dummy_matcher = ignore::gitignore::GitignoreBuilder::new(root).build()?;
@@ -66,7 +73,7 @@ impl DiffCommand {
         println!("diff --rustory {} current", snapshot_id);
 
         // 简单的文件级差异
-        for (path, _) in &current_index.files {
+        for path in current_index.files.keys() {
             if !snapshot.files.contains_key(path) {
                 println!("+ {}", path.display());
             }
@@ -93,7 +100,7 @@ impl DiffCommand {
         println!("diff --rustory {} {}", id1, id2);
 
         // 简单的文件级差异
-        for (path, _) in &snapshot2.files {
+        for path in snapshot2.files.keys() {
             if !snapshot1.files.contains_key(path) {
                 println!("+ {}", path.display());
             }

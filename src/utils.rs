@@ -31,5 +31,8 @@ pub fn truncate_hash(hash: &str, len: usize) -> String {
 
 pub fn create_backup_name() -> String {
     let now = chrono::Utc::now();
-    format!("rustory-rollback/backup-{}", now.format("%Y-%m-%dT%H-%M-%S"))
+    format!(
+        "rustory-rollback/backup-{}",
+        now.format("%Y-%m-%dT%H-%M-%S")
+    )
 }

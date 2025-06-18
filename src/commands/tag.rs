@@ -15,7 +15,8 @@ impl TagCommand {
         repo.snapshot_manager.load_snapshot(&snapshot_id)?;
 
         // 添加标签到配置
-        repo.config.set(&format!("tag.{}", name), snapshot_id.clone())?;
+        repo.config
+            .set(&format!("tag.{}", name), snapshot_id.clone())?;
         repo.config.save(&repo.rustory_dir)?;
 
         println!("Tagged snapshot {} as \"{}\"", snapshot_id, name);

@@ -43,9 +43,11 @@ impl RollbackCommand {
             let path = entry.path();
             if path.is_file() {
                 let relative_path = path.strip_prefix(root)?;
-                
+
                 // 跳过 .rustory 目录和 rustory-rollback 目录
-                if relative_path.starts_with(".rustory") || relative_path.starts_with("rustory-rollback") {
+                if relative_path.starts_with(".rustory")
+                    || relative_path.starts_with("rustory-rollback")
+                {
                     continue;
                 }
 
@@ -66,9 +68,11 @@ impl RollbackCommand {
             let path = entry.path();
             if path.is_file() {
                 let relative_path = path.strip_prefix(root)?;
-                
+
                 // 跳过 .rustory 目录和 rustory-rollback 目录
-                if relative_path.starts_with(".rustory") || relative_path.starts_with("rustory-rollback") {
+                if relative_path.starts_with(".rustory")
+                    || relative_path.starts_with("rustory-rollback")
+                {
                     continue;
                 }
 
@@ -77,7 +81,8 @@ impl RollbackCommand {
         }
 
         // 恢复快照内容
-        repo.snapshot_manager.restore_snapshot(snapshot_id, root, &repo.object_store)?;
+        repo.snapshot_manager
+            .restore_snapshot(snapshot_id, root, &repo.object_store)?;
 
         // 更新索引（如果不保持索引）
         if !keep_index {
@@ -96,10 +101,15 @@ impl RollbackCommand {
 
     fn export_to_backup(repo: &Repository, root: &Path, snapshot_id: &str) -> Result<()> {
         let backup_dir = root.join(utils::create_backup_name());
-        
-        repo.snapshot_manager.restore_snapshot(snapshot_id, &backup_dir, &repo.object_store)?;
 
-        println!("Exported snapshot {} to {}", snapshot_id, backup_dir.display());
+        repo.snapshot_manager
+            .restore_snapshot(snapshot_id, &backup_dir, &repo.object_store)?;
+
+        println!(
+            "Exported snapshot {} to {}",
+            snapshot_id,
+            backup_dir.display()
+        );
 
         Ok(())
     }

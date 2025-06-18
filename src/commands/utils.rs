@@ -23,15 +23,15 @@ impl UtilsCommand {
         let current_dir = env::current_dir()?;
         let root = Repository::find_root(&current_dir)?;
         let repo = Repository::new(root.clone())?;
-        
+
         let stats = StatsCollector::collect_repository_stats(&repo.rustory_dir)?;
-        
+
         if json {
             println!("{}", serde_json::to_string_pretty(&stats)?);
         } else {
             StatsCollector::print_stats(&stats);
         }
-        
+
         Ok(())
     }
 
@@ -40,12 +40,12 @@ impl UtilsCommand {
         let current_dir = env::current_dir()?;
         let root = Repository::find_root(&current_dir)?;
         let repo = Repository::new(root.clone())?;
-        
+
         println!("🔍 Verifying repository integrity...");
-        
+
         // 检查对象存储一致性
         let corrupted_objects = Self::verify_object_consistency(&repo.rustory_dir.join("objects"))?;
-        
+
         if corrupted_objects.is_empty() {
             println!("All objects are consistent");
         } else {
@@ -53,24 +53,24 @@ impl UtilsCommand {
             for obj in &corrupted_objects {
                 println!("  - {}", obj);
             }
-            
+
             if fix {
                 println!("🔧 Attempting to repair...");
                 // 这里可以实现修复逻辑
                 println!("Repair functionality not yet implemented");
             }
         }
-        
+
         // 验证所有快照
         let snapshots_dir = repo.rustory_dir.join("snapshots");
         let mut verified_snapshots = 0;
         let mut failed_snapshots = 0;
-        
+
         if snapshots_dir.exists() {
             for entry in std::fs::read_dir(&snapshots_dir)? {
                 let entry = entry?;
                 let path = entry.path();
-                
+
                 if path.is_file() && path.extension().and_then(|s| s.to_str()) == Some("json") {
                     match Self::verify_snapshot_integrity(&path) {
                         Ok(_) => verified_snapshots += 1,
@@ -82,18 +82,18 @@ impl UtilsCommand {
                 }
             }
         }
-        
+
         println!("\nVerification Summary:");
         println!("  Verified snapshots: {}", verified_snapshots);
         println!("  Failed snapshots: {}", failed_snapshots);
         println!("  Corrupted objects: {}", corrupted_objects.len());
-        
+
         if failed_snapshots == 0 && corrupted_objects.is_empty() {
             println!("Repository is healthy!");
         } else {
             println!("Repository has integrity issues that need attention");
         }
-        
+
         Ok(())
     }
 
@@ -101,27 +101,27 @@ impl UtilsCommand {
     pub fn select_files_to_commit() -> Result<Vec<String>> {
         println!("Interactive commit mode:");
         println!("Select files to include in this commit:");
-        
+
         // 这里可以实现交互式文件选择逻辑
         // 暂时返回空向量作为示例
         Ok(vec![])
     }
-    
+
     /// 交互式查看更改
     pub fn review_changes() -> Result<bool> {
         print!("Review changes before commit? (y/n): ");
         io::stdout().flush()?;
-        
+
         let mut input = String::new();
         io::stdin().read_line(&mut input)?;
-        
+
         Ok(input.trim().to_lowercase() == "y")
     }
-    
+
     /// 简化的快照验证 - 仅检查文件是否为有效JSON
     fn verify_snapshot_integrity(snapshot_path: &std::path::Path) -> Result<bool> {
         let content = std::fs::read_to_string(snapshot_path)?;
-        
+
         // 简单验证：检查是否能成功解析为快照元数据
         match serde_json::from_str::<crate::SnapshotMetadata>(&content) {
             Ok(snapshot) => {
@@ -134,21 +134,21 @@ impl UtilsCommand {
             }
         }
     }
-    
+
     /// 简化的对象存储检查 - 仅检查对象文件是否存在且可读
     fn verify_object_consistency(objects_dir: &std::path::Path) -> Result<Vec<String>> {
         let mut corrupted_objects = Vec::new();
-        
+
         if !objects_dir.exists() {
             return Ok(corrupted_objects);
         }
-        
+
         // 简单检查：遍历对象目录，验证文件是否可读
         for entry in walkdir::WalkDir::new(objects_dir) {
             let entry = entry?;
             if entry.file_type().is_file() {
                 let path = entry.path();
-                
+
                 // 尝试读取文件
                 match std::fs::read(path) {
                     Ok(_) => {
@@ -164,7 +164,7 @@ impl UtilsCommand {
                 }
             }
         }
-        
+
         Ok(corrupted_objects)
     }
 }

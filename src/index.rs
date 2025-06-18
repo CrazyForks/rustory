@@ -38,7 +38,7 @@ impl IndexManager {
         // 使用 ignore::WalkBuilder 来正确处理忽略规则
         let mut builder = ignore::WalkBuilder::new(root);
         builder.hidden(false); // 显示隐藏文件，但会应用 .rustory/ignore 规则
-        
+
         // 添加自定义忽略文件
         let ignore_path = root.join(".rustory/ignore");
         if ignore_path.exists() {
@@ -48,12 +48,14 @@ impl IndexManager {
         for entry in builder.build() {
             let entry = entry?;
             let path = entry.path();
-            
+
             if path.is_file() {
                 let relative_path = path.strip_prefix(root)?;
-                
+
                 // 显式跳过 .rustory 目录和 rustory-rollback 目录
-                if relative_path.starts_with(".rustory") || relative_path.starts_with("rustory-rollback") {
+                if relative_path.starts_with(".rustory")
+                    || relative_path.starts_with("rustory-rollback")
+                {
                     continue;
                 }
 
@@ -87,7 +89,7 @@ impl IndexManager {
 
     pub fn compare_with_current(
         &self,
-        root: &Path, 
+        root: &Path,
         ignore_matcher: &ignore::gitignore::Gitignore,
     ) -> Result<(Vec<PathBuf>, Vec<PathBuf>, Vec<PathBuf>)> {
         let old_index = self.load()?;

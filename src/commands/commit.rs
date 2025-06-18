@@ -11,7 +11,7 @@ impl CommitCommand {
         let root = Repository::find_root(&current_dir)?;
         let mut repo = Repository::new(root)?;
 
-        let message = message.unwrap_or_else(|| "".to_string());
+        let message = message.unwrap_or_default();
         let snapshot_id = repo.create_snapshot(message.clone())?;
 
         // 获取变更统计

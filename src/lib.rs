@@ -27,6 +27,12 @@ pub struct Index {
     pub files: HashMap<PathBuf, FileEntry>,
 }
 
+impl Default for Index {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Index {
     pub fn new() -> Self {
         Self {

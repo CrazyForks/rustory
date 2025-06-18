@@ -20,16 +20,16 @@ impl DiffEngine {
     pub fn diff_text(old_content: &str, new_content: &str) -> Vec<DiffLine> {
         let old_lines: Vec<&str> = old_content.lines().collect();
         let new_lines: Vec<&str> = new_content.lines().collect();
-        
+
         Self::myers_diff(&old_lines, &new_lines)
     }
-    
+
     /// 使用Myers差异算法生成差异
     fn myers_diff(old_lines: &[&str], new_lines: &[&str]) -> Vec<DiffLine> {
         let mut result = Vec::new();
         let mut old_idx = 0;
         let mut new_idx = 0;
-        
+
         // 简化的差异算法 - 实际项目中可以使用更复杂的算法
         while old_idx < old_lines.len() || new_idx < new_lines.len() {
             if old_idx >= old_lines.len() {
@@ -73,17 +73,17 @@ impl DiffEngine {
                 new_idx += 1;
             }
         }
-        
+
         result
     }
-    
+
     /// 打印差异到控制台
     pub fn print_diff(diff_lines: &[DiffLine], file_path: &str) {
         use colored::*;
-        
+
         println!("{}", format!("--- {}", file_path).bold());
         println!("{}", format!("+++ {}", file_path).bold());
-        
+
         for line in diff_lines {
             match line.line_type {
                 DiffLineType::Added => println!("{}", line.content.green()),
@@ -93,13 +93,13 @@ impl DiffEngine {
             }
         }
     }
-    
+
     /// 生成统计信息
     pub fn get_diff_stats(diff_lines: &[DiffLine]) -> (usize, usize, usize) {
         let mut added = 0;
         let mut removed = 0;
         let mut modified = 0;
-        
+
         for line in diff_lines {
             match line.line_type {
                 DiffLineType::Added => added += 1,
@@ -108,7 +108,7 @@ impl DiffEngine {
                 DiffLineType::Context => {}
             }
         }
-        
+
         (added, removed, modified)
     }
 }

@@ -21,12 +21,15 @@ impl HistoryCommand {
                 return Ok(());
             }
 
-            println!("{:<8} {:<20} {:>2} {:>2} {:>2} {}", 
-                "ID", "Time", "+", "~", "-", "Message");
+            println!(
+                "{:<8} {:<20} {:>2} {:>2} {:>2} Message",
+                "ID", "Time", "+", "~", "-"
+            );
             println!("{}", "-".repeat(60));
 
             for entry in &history {
-                println!("{:<8} {:<20} {:>2} {:>2} {:>2} \"{}\"",
+                println!(
+                    "{:<8} {:<20} {:>2} {:>2} {:>2} \"{}\"",
                     entry.snapshot_id,
                     entry.timestamp.format("%Y-%m-%dT%H:%M:%S"),
                     entry.added,

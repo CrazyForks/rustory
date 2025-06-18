@@ -23,7 +23,11 @@ impl ConfigCommand {
                 if let Some(val) = value {
                     repo.config.set(&key, val)?;
                     repo.config.save(&repo.rustory_dir)?;
-                    println!("Configuration updated: {} = {}", key, repo.config.get(&key).unwrap_or_default());
+                    println!(
+                        "Configuration updated: {} = {}",
+                        key,
+                        repo.config.get(&key).unwrap_or_default()
+                    );
                 } else {
                     return Err(anyhow::anyhow!("Value required for 'set' action"));
                 }

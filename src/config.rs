@@ -8,26 +8,26 @@ use std::path::Path;
 pub struct Config {
     #[serde(default = "default_output_format")]
     pub output_format: String,
-    
+
     #[serde(default = "default_editor")]
     pub editor: String,
-    
+
     #[serde(default = "default_max_file_size")]
     pub max_file_size_mb: u64,
-    
+
     #[serde(default)]
     pub tags: HashMap<String, String>,
-    
+
     #[serde(default)]
     pub backup_enabled: bool,
-    
+
     // GC 相关配置
     #[serde(default)]
     pub gc_keep_days: Option<u32>,
-    
+
     #[serde(default)]
     pub gc_keep_snapshots: Option<usize>,
-    
+
     #[serde(default)]
     pub gc_auto_enabled: bool,
 }

@@ -1,6 +1,6 @@
 use anyhow::Result;
-use std::env;
 use colored::*;
+use std::env;
 
 use crate::Repository;
 
@@ -15,7 +15,8 @@ impl StatusCommand {
         // 创建一个虚拟的忽略匹配器（现在在内部处理）
         let dummy_matcher = ignore::gitignore::GitignoreBuilder::new(&root).build()?;
 
-        let (added, modified, deleted) = repo.index_manager
+        let (added, modified, deleted) = repo
+            .index_manager
             .compare_with_current(&root, &dummy_matcher)?;
 
         if json {
@@ -36,15 +37,24 @@ impl StatusCommand {
 
         // 显示状态摘要
         let total_changes = added.len() + modified.len() + deleted.len();
-        println!("{} {} file(s) changed", "Status:".bold(), total_changes.to_string().yellow());
-        
+        println!(
+            "{} {} file(s) changed",
+            "Status:".bold(),
+            total_changes.to_string().yellow()
+        );
+
         if !added.is_empty() {
             println!("\n{} {}:", "Added".green().bold(), added.len());
             for path in &added {
                 if verbose {
                     // 显示文件大小等详细信息
                     if let Ok(metadata) = std::fs::metadata(root.join(path)) {
-                        println!("  {} {} ({})", "+".green(), path.display(), Self::format_size(metadata.len()));
+                        println!(
+                            "  {} {} ({})",
+                            "+".green(),
+                            path.display(),
+                            Self::format_size(metadata.len())
+                        );
                     } else {
                         println!("  {} {}", "+".green(), path.display());
                     }
@@ -59,7 +69,12 @@ impl StatusCommand {
             for path in &modified {
                 if verbose {
                     if let Ok(metadata) = std::fs::metadata(root.join(path)) {
-                        println!("  {} {} ({})", "~".yellow(), path.display(), Self::format_size(metadata.len()));
+                        println!(
+                            "  {} {} ({})",
+                            "~".yellow(),
+                            path.display(),
+                            Self::format_size(metadata.len())
+                        );
                     } else {
                         println!("  {} {}", "~".yellow(), path.display());
                     }
@@ -77,11 +92,14 @@ impl StatusCommand {
         }
 
         // 显示提示信息
-        println!("\n{}", "Tip: Use 'rustory commit -m \"message\"' to create a snapshot".dimmed());
+        println!(
+            "\n{}",
+            "Tip: Use 'rustory commit -m \"message\"' to create a snapshot".dimmed()
+        );
 
         Ok(())
     }
-    
+
     fn format_size(bytes: u64) -> String {
         if bytes < 1024 {
             format!("{} B", bytes)

@@ -47,8 +47,11 @@ impl SnapshotManager {
             if full_path.exists() {
                 // 检查文件大小
                 if entry.size > config.max_file_size_mb * 1024 * 1024 {
-                    eprintln!("Warning: Skipping large file: {} ({}MB)", 
-                        path.display(), entry.size / 1024 / 1024);
+                    eprintln!(
+                        "Warning: Skipping large file: {} ({}MB)",
+                        path.display(),
+                        entry.size / 1024 / 1024
+                    );
                     continue;
                 }
 
@@ -76,18 +79,23 @@ impl SnapshotManager {
         let timestamp = chrono::Utc::now();
         use std::collections::hash_map::DefaultHasher;
         use std::hash::{Hash, Hasher};
-        
+
         let mut hasher = DefaultHasher::new();
-        timestamp.timestamp_nanos_opt().unwrap_or(0).hash(&mut hasher);
+        timestamp
+            .timestamp_nanos_opt()
+            .unwrap_or(0)
+            .hash(&mut hasher);
         message.hash(&mut hasher);
-        std::process::id().hash(&mut hasher);  // 进程ID增加唯一性
-        
+        std::process::id().hash(&mut hasher); // 进程ID增加唯一性
+
         // 为了进一步避免冲突，加入一些随机性
         use std::time::{SystemTime, UNIX_EPOCH};
-        let nanos = SystemTime::now().duration_since(UNIX_EPOCH)
-            .unwrap_or_default().subsec_nanos();
+        let nanos = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap_or_default()
+            .subsec_nanos();
         nanos.hash(&mut hasher);
-        
+
         let hash = hasher.finish();
         let snapshot_id = format!("{:x}", hash).chars().take(8).collect::<String>();
 
@@ -128,7 +136,10 @@ impl SnapshotManager {
     pub fn load_snapshot(&self, snapshot_id: &str) -> Result<SnapshotMetadata> {
         let snapshot_path = self.snapshots_dir.join(format!("{}.json", snapshot_id));
         if !snapshot_path.exists() {
-            return Err(anyhow::anyhow!("error: snapshot '{}' not found", snapshot_id));
+            return Err(anyhow::anyhow!(
+                "error: snapshot '{}' not found",
+                snapshot_id
+            ));
         }
 
         let content = std::fs::read_to_string(snapshot_path)?;
@@ -169,7 +180,7 @@ impl SnapshotManager {
             .create(true)
             .append(true)
             .open(&self.history_path)?;
-        
+
         file.write_all(line.as_bytes())?;
         Ok(())
     }
@@ -181,8 +192,7 @@ impl SnapshotManager {
         }
 
         let snapshot_id = parts[0].to_string();
-        let timestamp = chrono::DateTime::parse_from_rfc3339(parts[1])?
-            .with_timezone(&chrono::Utc);
+        let timestamp = chrono::DateTime::parse_from_rfc3339(parts[1])?.with_timezone(&chrono::Utc);
 
         let changes: Vec<&str> = parts[2].split('/').collect();
         if changes.len() != 3 {
@@ -197,9 +207,7 @@ impl SnapshotManager {
         let msg_start = line.find("msg=\"").map(|i| i + 5);
         let msg_end = line.rfind('"');
         let message = match (msg_start, msg_end) {
-            (Some(start), Some(end)) if start < end => {
-                line[start..end].to_string()
-            }
+            (Some(start), Some(end)) if start < end => line[start..end].to_string(),
             _ => String::new(),
         };
 

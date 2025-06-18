@@ -12,7 +12,7 @@ impl IgnoreCommand {
         let current_dir = env::current_dir()?;
         let root = Repository::find_root(&current_dir)?;
         let repo = Repository::new(root)?;
-        
+
         let ignore_path = repo.rustory_dir.join("ignore");
 
         match action.as_deref() {
@@ -42,10 +42,8 @@ impl IgnoreCommand {
 
     fn edit_ignore(repo: &Repository, ignore_path: &std::path::Path) -> Result<()> {
         let editor = &repo.config.editor;
-        
-        let status = Command::new(editor)
-            .arg(ignore_path)
-            .status()?;
+
+        let status = Command::new(editor).arg(ignore_path).status()?;
 
         if !status.success() {
             return Err(anyhow::anyhow!("Editor exited with non-zero status"));

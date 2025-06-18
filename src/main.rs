@@ -13,8 +13,8 @@ fn main() {
                 .arg(
                     Arg::new("path")
                         .help("Path to initialize (default: current directory)")
-                        .value_parser(clap::value_parser!(PathBuf))
-                )
+                        .value_parser(clap::value_parser!(PathBuf)),
+                ),
         )
         .subcommand(
             Command::new("commit")
@@ -25,14 +25,14 @@ fn main() {
                         .short('m')
                         .long("message")
                         .help("Commit message")
-                        .value_name("MSG")
+                        .value_name("MSG"),
                 )
                 .arg(
                     Arg::new("json")
                         .long("json")
                         .help("Output in JSON format")
-                        .action(clap::ArgAction::SetTrue)
-                )
+                        .action(clap::ArgAction::SetTrue),
+                ),
         )
         .subcommand(
             Command::new("history")
@@ -42,8 +42,8 @@ fn main() {
                     Arg::new("json")
                         .long("json")
                         .help("Output in JSON format")
-                        .action(clap::ArgAction::SetTrue)
-                )
+                        .action(clap::ArgAction::SetTrue),
+                ),
         )
         .subcommand(
             Command::new("status")
@@ -53,28 +53,20 @@ fn main() {
                         .short('v')
                         .long("verbose")
                         .help("Show verbose output")
-                        .action(clap::ArgAction::SetTrue)
+                        .action(clap::ArgAction::SetTrue),
                 )
                 .arg(
                     Arg::new("json")
                         .long("json")
                         .help("Output in JSON format")
-                        .action(clap::ArgAction::SetTrue)
-                )
+                        .action(clap::ArgAction::SetTrue),
+                ),
         )
         .subcommand(
             Command::new("diff")
                 .about("Show differences between snapshots or working directory")
-                .arg(
-                    Arg::new("id1")
-                        .help("First snapshot ID")
-                        .value_name("ID1")
-                )
-                .arg(
-                    Arg::new("id2")
-                        .help("Second snapshot ID")
-                        .value_name("ID2")
-                )
+                .arg(Arg::new("id1").help("First snapshot ID").value_name("ID1"))
+                .arg(Arg::new("id2").help("Second snapshot ID").value_name("ID2")),
         )
         .subcommand(
             Command::new("rollback")
@@ -83,20 +75,20 @@ fn main() {
                     Arg::new("id")
                         .help("Snapshot ID to rollback to")
                         .required(true)
-                        .value_name("ID")
+                        .value_name("ID"),
                 )
                 .arg(
                     Arg::new("restore")
                         .long("restore")
                         .help("Directly restore to working directory")
-                        .action(clap::ArgAction::SetTrue)
+                        .action(clap::ArgAction::SetTrue),
                 )
                 .arg(
                     Arg::new("keep-index")
                         .long("keep-index")
                         .help("Don't update index.json")
-                        .action(clap::ArgAction::SetTrue)
-                )
+                        .action(clap::ArgAction::SetTrue),
+                ),
         )
         .subcommand(
             Command::new("tag")
@@ -105,23 +97,21 @@ fn main() {
                     Arg::new("name")
                         .help("Tag name")
                         .required(true)
-                        .value_name("NAME")
+                        .value_name("NAME"),
                 )
                 .arg(
                     Arg::new("id")
                         .help("Snapshot ID to tag")
                         .required(true)
-                        .value_name("ID")
-                )
+                        .value_name("ID"),
+                ),
         )
         .subcommand(
-            Command::new("ignore")
-                .about("Manage ignore rules")
-                .arg(
-                    Arg::new("action")
-                        .help("Action: show, edit")
-                        .value_name("ACTION")
-                )
+            Command::new("ignore").about("Manage ignore rules").arg(
+                Arg::new("action")
+                    .help("Action: show, edit")
+                    .value_name("ACTION"),
+            ),
         )
         .subcommand(
             Command::new("config")
@@ -130,19 +120,19 @@ fn main() {
                     Arg::new("action")
                         .help("Action: get, set")
                         .required(true)
-                        .value_name("ACTION")
+                        .value_name("ACTION"),
                 )
                 .arg(
                     Arg::new("key")
                         .help("Configuration key")
                         .required(true)
-                        .value_name("KEY")
+                        .value_name("KEY"),
                 )
                 .arg(
                     Arg::new("value")
                         .help("Configuration value (for set action)")
-                        .value_name("VALUE")
-                )
+                        .value_name("VALUE"),
+                ),
         )
         .subcommand(
             Command::new("gc")
@@ -151,20 +141,20 @@ fn main() {
                     Arg::new("dry-run")
                         .long("dry-run")
                         .help("Show what would be removed without actually removing")
-                        .action(clap::ArgAction::SetTrue)
+                        .action(clap::ArgAction::SetTrue),
                 )
                 .arg(
                     Arg::new("aggressive")
                         .long("aggressive")
                         .help("Perform more aggressive cleanup and optimization")
-                        .action(clap::ArgAction::SetTrue)
+                        .action(clap::ArgAction::SetTrue),
                 )
                 .arg(
                     Arg::new("prune-expired")
                         .long("prune-expired")
                         .help("Remove snapshots older than configured retention period")
-                        .action(clap::ArgAction::SetTrue)
-                )
+                        .action(clap::ArgAction::SetTrue),
+                ),
         )
         .subcommand(
             Command::new("stats")
@@ -173,8 +163,8 @@ fn main() {
                     Arg::new("json")
                         .long("json")
                         .help("Output in JSON format")
-                        .action(clap::ArgAction::SetTrue)
-                )
+                        .action(clap::ArgAction::SetTrue),
+                ),
         )
         .subcommand(
             Command::new("verify")
@@ -183,8 +173,8 @@ fn main() {
                     Arg::new("fix")
                         .long("fix")
                         .help("Attempt to fix integrity issues")
-                        .action(clap::ArgAction::SetTrue)
-                )
+                        .action(clap::ArgAction::SetTrue),
+                ),
         );
 
     let matches = app.get_matches();
