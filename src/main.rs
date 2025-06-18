@@ -4,7 +4,7 @@ use std::path::PathBuf;
 
 fn main() {
     let app = Command::new("rustory")
-        .version("0.1.0")
+        .version("0.1.1")
         .about("A lightweight local version management tool written in Rust")
         .subcommand_required(true)
         .subcommand(
