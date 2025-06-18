@@ -1,6 +1,7 @@
 use anyhow::Result;
 use std::env;
 use std::path::Path;
+use walkdir::WalkDir;
 
 use crate::{Repository, utils};
 
@@ -34,7 +35,7 @@ impl RollbackCommand {
         std::fs::create_dir_all(&backup_dir)?;
 
         // 备份当前工作区
-        for entry in walkdir::WalkDir::new(root)
+        for entry in WalkDir::new(root)
             .follow_links(false)
             .into_iter()
             .filter_map(Result::ok)
@@ -43,8 +44,8 @@ impl RollbackCommand {
             if path.is_file() {
                 let relative_path = path.strip_prefix(root)?;
                 
-                // 跳过 .rustory 目录
-                if relative_path.starts_with(".rustory") {
+                // 跳过 .rustory 目录和 rustory-rollback 目录
+                if relative_path.starts_with(".rustory") || relative_path.starts_with("rustory-rollback") {
                     continue;
                 }
 
@@ -56,8 +57,8 @@ impl RollbackCommand {
             }
         }
 
-        // 清空工作区（除了 .rustory）
-        for entry in walkdir::WalkDir::new(root)
+        // 清空工作区（除了 .rustory 和 rustory-rollback）
+        for entry in WalkDir::new(root)
             .follow_links(false)
             .into_iter()
             .filter_map(Result::ok)
@@ -66,8 +67,8 @@ impl RollbackCommand {
             if path.is_file() {
                 let relative_path = path.strip_prefix(root)?;
                 
-                // 跳过 .rustory 目录
-                if relative_path.starts_with(".rustory") {
+                // 跳过 .rustory 目录和 rustory-rollback 目录
+                if relative_path.starts_with(".rustory") || relative_path.starts_with("rustory-rollback") {
                     continue;
                 }
 

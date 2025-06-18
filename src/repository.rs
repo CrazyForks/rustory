@@ -73,6 +73,9 @@ out/
 
 # rustory itself
 .rustory/
+
+# rustory rollback directory
+rustory-rollback/
 "#;
         fs::write(rustory_dir.join("ignore"), ignore_content)?;
 

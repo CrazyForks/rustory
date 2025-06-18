@@ -52,8 +52,8 @@ impl IndexManager {
             if path.is_file() {
                 let relative_path = path.strip_prefix(root)?;
                 
-                // 显式跳过 .rustory 目录
-                if relative_path.starts_with(".rustory") {
+                // 显式跳过 .rustory 目录和 rustory-rollback 目录
+                if relative_path.starts_with(".rustory") || relative_path.starts_with("rustory-rollback") {
                     continue;
                 }
 
