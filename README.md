@@ -245,7 +245,12 @@ rustory gc [--dry-run] [--aggressive] [--prune-expired]
 - **功能**: 清理不需要的对象和过期快照
 - **参数**:
   - `--dry-run`: 预览模式，显示将删除的内容
-  - `--aggressive`: 更激进的优化（预留功能）
+  - `--aggressive`: 执行更激进的优化：
+    - 对象重新压缩和重复检测
+    - 深度碎片和临时文件清理
+    - 索引文件优化和冗余条目清理
+    - 快照分析和优化建议
+    - 存储结构重组和空目录清理
   - `--prune-expired`: 包含过期快照清理
 - **清理策略**: 基于配置的时间和数量限制
 
@@ -555,4 +560,4 @@ cargo clippy
 
 **[⬆ 回到顶部](#rustory)**
 
-Made with ❤️ by the Rustory Team
+Made with ❤️ by the Rustory Teamnew line
