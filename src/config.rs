@@ -20,6 +20,16 @@ pub struct Config {
     
     #[serde(default)]
     pub backup_enabled: bool,
+    
+    // GC 相关配置
+    #[serde(default)]
+    pub gc_keep_days: Option<u32>,
+    
+    #[serde(default)]
+    pub gc_keep_snapshots: Option<usize>,
+    
+    #[serde(default)]
+    pub gc_auto_enabled: bool,
 }
 
 fn default_output_format() -> String {
@@ -42,6 +52,9 @@ impl Default for Config {
             max_file_size_mb: default_max_file_size(),
             tags: HashMap::new(),
             backup_enabled: true,
+            gc_keep_days: Some(30),
+            gc_keep_snapshots: Some(50),
+            gc_auto_enabled: false,
         }
     }
 }
@@ -70,6 +83,9 @@ impl Config {
             "editor" => Some(self.editor.clone()),
             "max_file_size_mb" => Some(self.max_file_size_mb.to_string()),
             "backup_enabled" => Some(self.backup_enabled.to_string()),
+            "gc_keep_days" => self.gc_keep_days.map(|v| v.to_string()),
+            "gc_keep_snapshots" => self.gc_keep_snapshots.map(|v| v.to_string()),
+            "gc_auto_enabled" => Some(self.gc_auto_enabled.to_string()),
             _ => self.tags.get(key).cloned(),
         }
     }
@@ -80,6 +96,9 @@ impl Config {
             "editor" => self.editor = value,
             "max_file_size_mb" => self.max_file_size_mb = value.parse()?,
             "backup_enabled" => self.backup_enabled = value.parse()?,
+            "gc_keep_days" => self.gc_keep_days = Some(value.parse()?),
+            "gc_keep_snapshots" => self.gc_keep_snapshots = Some(value.parse()?),
+            "gc_auto_enabled" => self.gc_auto_enabled = value.parse()?,
             _ => {
                 self.tags.insert(key.to_string(), value);
             }

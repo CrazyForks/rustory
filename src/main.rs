@@ -130,6 +130,28 @@ fn main() {
                         .help("Configuration value (for set action)")
                         .value_name("VALUE")
                 )
+        )
+        .subcommand(
+            Command::new("gc")
+                .about("Cleanup unnecessary files and optimize the repository")
+                .arg(
+                    Arg::new("dry-run")
+                        .long("dry-run")
+                        .help("Show what would be removed without actually removing")
+                        .action(clap::ArgAction::SetTrue)
+                )
+                .arg(
+                    Arg::new("aggressive")
+                        .long("aggressive")
+                        .help("Perform more aggressive cleanup and optimization")
+                        .action(clap::ArgAction::SetTrue)
+                )
+                .arg(
+                    Arg::new("prune-expired")
+                        .long("prune-expired")
+                        .help("Remove snapshots older than configured retention period")
+                        .action(clap::ArgAction::SetTrue)
+                )
         );
 
     let matches = app.get_matches();
@@ -176,6 +198,12 @@ fn main() {
             let key = sub_matches.get_one::<String>("key").unwrap().clone();
             let value = sub_matches.get_one::<String>("value").cloned();
             ConfigCommand::execute(action, key, value)
+        }
+        Some(("gc", sub_matches)) => {
+            let dry_run = sub_matches.get_flag("dry-run");
+            let aggressive = sub_matches.get_flag("aggressive");
+            let prune_expired = sub_matches.get_flag("prune-expired");
+            GcCommand::execute(dry_run, aggressive, prune_expired)
         }
         _ => {
             eprintln!("No subcommand provided. Use --help for usage information.");

@@ -77,4 +77,64 @@ impl ObjectStore {
     pub fn exists(&self, hash: &str) -> bool {
         self.get_object_path(hash).exists()
     }
+
+    /// 获取所有存储的对象哈希值
+    pub fn list_all_objects(&self) -> Result<Vec<String>> {
+        let mut objects = Vec::new();
+        if self.objects_dir.exists() {
+            self.collect_objects_recursive(&self.objects_dir, &mut objects)?;
+        }
+        Ok(objects)
+    }
+
+    /// 递归收集对象目录中的所有对象
+    fn collect_objects_recursive(&self, dir: &Path, objects: &mut Vec<String>) -> Result<()> {
+        for entry in fs::read_dir(dir)? {
+            let entry = entry?;
+            let path = entry.path();
+            
+            if path.is_dir() {
+                self.collect_objects_recursive(&path, objects)?;
+            } else if path.is_file() {
+                // 从路径重构对象哈希
+                if let Some(parent) = path.parent() {
+                    if let (Some(prefix), Some(suffix)) = (
+                        parent.file_name().and_then(|s| s.to_str()),
+                        path.file_name().and_then(|s| s.to_str())
+                    ) {
+                        let hash = format!("{}{}", prefix, suffix);
+                        objects.push(hash);
+                    }
+                }
+            }
+        }
+        Ok(())
+    }
+
+    /// 删除指定的对象
+    pub fn remove_object(&mut self, hash: &str) -> Result<u64> {
+        let object_path = self.get_object_path(hash);
+        if !object_path.exists() {
+            return Ok(0);
+        }
+
+        let metadata = fs::metadata(&object_path)?;
+        let size = metadata.len();
+        
+        fs::remove_file(&object_path)?;
+        
+        // 尝试删除空的父目录
+        if let Some(parent) = object_path.parent() {
+            let _ = fs::remove_dir(parent); // 忽略错误，可能不为空
+        }
+        
+        Ok(size)
+    }
+
+    /// 获取对象的大小
+    pub fn get_object_size(&self, hash: &str) -> Result<u64> {
+        let object_path = self.get_object_path(hash);
+        let metadata = fs::metadata(object_path)?;
+        Ok(metadata.len())
+    }
 }

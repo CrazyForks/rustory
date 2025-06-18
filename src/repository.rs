@@ -119,12 +119,168 @@ rustory-rollback/
     }
 
     pub fn create_snapshot(&mut self, message: String) -> Result<String> {
-        self.snapshot_manager.create_snapshot(
+        let snapshot_id = self.snapshot_manager.create_snapshot(
             &self.root,
             &self.config,
             &mut self.object_store,
             &mut self.index_manager,
             message,
-        )
+        )?;
+
+        // 如果启用了自动 GC，在创建快照后运行
+        if self.config.gc_auto_enabled {
+            if let Err(e) = self.auto_gc() {
+                eprintln!("Warning: Auto GC failed: {}", e);
+            }
+        }
+
+        Ok(snapshot_id)
+    }
+
+    /// 执行自动垃圾回收
+    pub fn auto_gc(&mut self) -> Result<()> {
+        // 检查是否需要运行 GC
+        if self.should_run_gc()? {
+            self.run_gc(false, false, false)?;
+        }
+        Ok(())
+    }
+
+    /// 运行垃圾回收
+    pub fn run_gc(&mut self, dry_run: bool, _aggressive: bool, prune_expired: bool) -> Result<()> {
+        if dry_run {
+            println!("Running in dry-run mode (no changes will be made)");
+        }
+
+        // 收集所有被引用的对象哈希
+        let referenced_objects = self.collect_referenced_objects()?;
+        println!("Found {} objects referenced by snapshots", referenced_objects.len());
+
+        // 查找所有存储的对象
+        let stored_objects = self.object_store.list_all_objects()?;
+        println!("Found {} objects in storage", stored_objects.len());
+
+        // 找出未被引用的对象
+        let mut unreferenced_objects = Vec::new();
+        for object_hash in &stored_objects {
+            if !referenced_objects.contains(object_hash) {
+                unreferenced_objects.push(object_hash.clone());
+            }
+        }
+
+        println!("Found {} unreferenced objects", unreferenced_objects.len());
+
+        // 删除未被引用的对象
+        let mut removed_count = 0;
+        let mut freed_bytes = 0u64;
+
+        for object_hash in &unreferenced_objects {
+            if !dry_run {
+                if let Ok(actual_size) = self.object_store.remove_object(object_hash) {
+                    removed_count += 1;
+                    freed_bytes += actual_size;
+                }
+            } else {
+                if let Ok(size) = self.object_store.get_object_size(object_hash) {
+                    freed_bytes += size;
+                }
+                println!("Would remove object: {}", object_hash);
+            }
+        }
+
+        // 如果启用了清理过期快照
+        if prune_expired {
+            self.prune_expired_snapshots(dry_run)?;
+        }
+
+        if dry_run {
+            println!("Dry run completed. Would have:");
+            println!("  - Removed {} unreferenced objects", unreferenced_objects.len());
+            println!("  - Freed {} bytes ({:.2} MB)", freed_bytes, freed_bytes as f64 / 1024.0 / 1024.0);
+        } else {
+            println!("Garbage collection completed:");
+            println!("  - Removed {} unreferenced objects", removed_count);
+            println!("  - Freed {} bytes ({:.2} MB)", freed_bytes, freed_bytes as f64 / 1024.0 / 1024.0);
+        }
+
+        Ok(())
+    }
+
+    /// 检查是否应该运行 GC
+    fn should_run_gc(&self) -> Result<bool> {
+        // 简单的策略：每 10 次提交运行一次 GC
+        let history = self.snapshot_manager.list_history()?;
+        Ok(history.len() % 10 == 0)
+    }
+
+    /// 收集所有被快照引用的对象哈希
+    fn collect_referenced_objects(&self) -> Result<std::collections::HashSet<String>> {
+        use std::collections::HashSet;
+        use std::fs;
+        
+        let mut referenced = HashSet::new();
+        
+        // 读取所有快照文件
+        let snapshots_dir = self.rustory_dir.join("snapshots");
+        if snapshots_dir.exists() {
+            for entry in fs::read_dir(&snapshots_dir)? {
+                let entry = entry?;
+                let path = entry.path();
+                
+                if path.is_file() && path.extension().and_then(|s| s.to_str()) == Some("json") {
+                    if let Ok(content) = fs::read_to_string(&path) {
+                        if let Ok(snapshot) = serde_json::from_str::<crate::SnapshotMetadata>(&content) {
+                            // 收集快照中所有文件的哈希
+                            for (_, file_entry) in &snapshot.files {
+                                referenced.insert(file_entry.hash.clone());
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        Ok(referenced)
+    }
+
+    /// 清理过期的快照
+    fn prune_expired_snapshots(&self, dry_run: bool) -> Result<()> {
+        use chrono::{Duration, Utc};
+        
+        // 从配置中获取保留策略
+        let keep_days = self.config.gc_keep_days.unwrap_or(30);
+        let keep_count = self.config.gc_keep_snapshots.unwrap_or(50);
+        
+        let cutoff_date = Utc::now() - Duration::days(keep_days as i64);
+        
+        // 获取所有快照的历史
+        let history = self.snapshot_manager.list_history()?;
+        
+        // 按时间排序（最新的在前）
+        let mut snapshots_to_remove = Vec::new();
+        
+        // 保留最新的 keep_count 个快照
+        for (i, entry) in history.iter().enumerate() {
+            if i >= keep_count || entry.timestamp < cutoff_date {
+                snapshots_to_remove.push(entry.snapshot_id.clone());
+            }
+        }
+        
+        println!("Found {} snapshots to prune", snapshots_to_remove.len());
+        
+        for snapshot_id in &snapshots_to_remove {
+            let snapshot_path = self.rustory_dir.join("snapshots").join(format!("{}.json", snapshot_id));
+            
+            if !dry_run {
+                if snapshot_path.exists() {
+                    fs::remove_file(&snapshot_path)?;
+                    println!("Removed snapshot: {}", snapshot_id);
+                }
+            } else {
+                println!("Would remove snapshot: {}", snapshot_id);
+            }
+        }
+        
+        Ok(())
     }
 }
