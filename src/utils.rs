@@ -30,6 +30,7 @@ pub fn truncate_hash(hash: &str, len: usize) -> String {
 }
 
 pub fn create_backup_name() -> String {
+    // 备份名使用UTC时间，避免文件名中的时区问题
     let now = chrono::Utc::now();
     format!(
         "rustory-rollback/backup-{}",

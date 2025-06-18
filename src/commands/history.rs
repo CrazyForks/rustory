@@ -28,10 +28,21 @@ impl HistoryCommand {
             println!("{}", "-".repeat(60));
 
             for entry in &history {
+                // 根据配置决定显示UTC时间还是本地时间
+                let time_display = if repo.config.use_local_timezone {
+                    entry
+                        .timestamp
+                        .with_timezone(&chrono::Local)
+                        .format("%Y-%m-%d %H:%M:%S")
+                        .to_string()
+                } else {
+                    entry.timestamp.format("%Y-%m-%dT%H:%M:%SZ").to_string()
+                };
+
                 println!(
                     "{:<8} {:<20} {:>2} {:>2} {:>2} \"{}\"",
                     entry.snapshot_id,
-                    entry.timestamp.format("%Y-%m-%dT%H:%M:%S"),
+                    time_display,
                     entry.added,
                     entry.modified,
                     entry.deleted,

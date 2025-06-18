@@ -30,6 +30,10 @@ pub struct Config {
 
     #[serde(default)]
     pub gc_auto_enabled: bool,
+
+    // 时区显示设置
+    #[serde(default = "default_use_local_timezone")]
+    pub use_local_timezone: bool,
 }
 
 fn default_output_format() -> String {
@@ -44,6 +48,10 @@ fn default_max_file_size() -> u64 {
     100 // MB
 }
 
+fn default_use_local_timezone() -> bool {
+    true // 默认使用本地时区
+}
+
 impl Default for Config {
     fn default() -> Self {
         Self {
@@ -55,6 +63,7 @@ impl Default for Config {
             gc_keep_days: Some(30),
             gc_keep_snapshots: Some(50),
             gc_auto_enabled: false,
+            use_local_timezone: default_use_local_timezone(),
         }
     }
 }
@@ -86,6 +95,7 @@ impl Config {
             "gc_keep_days" => self.gc_keep_days.map(|v| v.to_string()),
             "gc_keep_snapshots" => self.gc_keep_snapshots.map(|v| v.to_string()),
             "gc_auto_enabled" => Some(self.gc_auto_enabled.to_string()),
+            "use_local_timezone" => Some(self.use_local_timezone.to_string()),
             _ => self.tags.get(key).cloned(),
         }
     }
@@ -99,6 +109,7 @@ impl Config {
             "gc_keep_days" => self.gc_keep_days = Some(value.parse()?),
             "gc_keep_snapshots" => self.gc_keep_snapshots = Some(value.parse()?),
             "gc_auto_enabled" => self.gc_auto_enabled = value.parse()?,
+            "use_local_timezone" => self.use_local_timezone = value.parse()?,
             _ => {
                 self.tags.insert(key.to_string(), value);
             }
