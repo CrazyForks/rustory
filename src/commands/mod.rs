@@ -8,6 +8,9 @@ pub mod tag;
 pub mod ignore;
 pub mod config;
 pub mod gc;
+pub mod stats;
+pub mod verify;
+pub mod interactive;
 
 pub use init::InitCommand;
 pub use commit::CommitCommand;
@@ -19,3 +22,6 @@ pub use tag::TagCommand;
 pub use ignore::IgnoreCommand;
 pub use config::ConfigCommand;
 pub use gc::GcCommand;
+pub use stats::StatsCommand;
+pub use verify::VerifyCommand;
+pub use interactive::InteractiveCommand;
