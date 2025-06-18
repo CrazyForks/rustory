@@ -4,7 +4,7 @@
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Rust](https://img.shields.io/badge/rust-1.70+-orange.svg)](https://www.rust-lang.org)
-[![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows-lightgrey.svg)](https://github.com/your-repo/rustory)
+[![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows-lightgrey.svg)](https://github.com/uselibrary/rustory)
 
 ## ✨ 项目简介
 
@@ -31,7 +31,7 @@ Rustory 是一个基于 Rust 的版本控制工具，旨在帮助开发者轻松
 
 ### 方式一：下载预编译二进制文件 (推荐)
 
-从 [GitHub Releases](https://github.com/your-repo/rustory/releases) 页面下载适合您系统的预编译二进制文件：
+从 [GitHub Releases](https://github.com/uselibrary/rustory/releases) 页面下载适合您系统的预编译二进制文件：
 
 #### 支持的平台
 - **Windows**: x64、ARM64
@@ -39,7 +39,7 @@ Rustory 是一个基于 Rust 的版本控制工具，旨在帮助开发者轻松
 - **Linux**: x64、ARM64
 
 #### 下载和校验
-1. 访问 [最新发布页面](https://github.com/your-repo/rustory/releases/latest)
+1. 访问 [最新发布页面](https://github.com/uselibrary/rustory/releases/latest)
 2. 根据您的系统选择相应的文件：
    - Windows: `rustory-x86_64-pc-windows-msvc.zip` 或 `rustory-aarch64-pc-windows-msvc.zip`
    - macOS: `rustory-x86_64-apple-darwin.tar.gz` 或 `rustory-aarch64-apple-darwin.tar.gz`
@@ -80,7 +80,7 @@ Rustory 是一个基于 Rust 的版本控制工具，旨在帮助开发者轻松
 
 2. **克隆并构建项目**
    ```bash
-   git clone https://github.com/your-repo/rustory.git
+   git clone https://github.com/uselibrary/rustory/releases.git
    cd rustory
    cargo build --release
    ```
@@ -484,7 +484,7 @@ jobs:
   snapshot:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Create snapshot
         run: |
           rustory init
