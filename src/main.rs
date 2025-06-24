@@ -195,7 +195,7 @@ fn main() {
         Some(("add", sub_matches)) | Some(("commit", sub_matches)) => {
             let message = sub_matches.get_one::<String>("message").cloned();
             let json = sub_matches.get_flag("json");
-            CommitCommand::execute(message, json)
+            AddCommand::execute(message, json)
         }
         Some(("history", sub_matches)) => {
             let json = sub_matches.get_flag("json");
@@ -215,7 +215,7 @@ fn main() {
             let id = sub_matches.get_one::<String>("id").unwrap().clone();
             let restore = sub_matches.get_flag("restore");
             let keep_index = sub_matches.get_flag("keep-index");
-            RollbackCommand::execute(id, restore, keep_index)
+            BackCommand::execute(id, restore, keep_index)
         }
         Some(("tag", sub_matches)) => {
             let name = sub_matches.get_one::<String>("name").unwrap().clone();
@@ -237,7 +237,7 @@ fn main() {
             let dry_run = sub_matches.get_flag("dry-run");
             let aggressive = sub_matches.get_flag("aggressive");
             let prune_expired = sub_matches.get_flag("prune-expired");
-            
+
             if let Some(target) = target {
                 UtilsCommand::remove_snapshots(target, dry_run)
             } else {

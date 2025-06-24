@@ -224,8 +224,9 @@ impl UtilsCommand {
         // 获取所有历史记录
         let history = repo.snapshot_manager.list_history()?;
 
-        let snapshots_to_remove = if start_str.chars().all(|c| c.is_ascii_digit()) 
-            && end_str.chars().all(|c| c.is_ascii_digit()) {
+        let snapshots_to_remove = if start_str.chars().all(|c| c.is_ascii_digit())
+            && end_str.chars().all(|c| c.is_ascii_digit())
+        {
             // 数字范围
             let start_num: usize = start_str.parse()?;
             let end_num: usize = end_str.parse()?;
@@ -234,7 +235,8 @@ impl UtilsCommand {
                 return Err(anyhow!("Invalid range: start number must be <= end number"));
             }
 
-            history.iter()
+            history
+                .iter()
                 .filter(|entry| entry.number >= start_num && entry.number <= end_num)
                 .map(|entry| entry.snapshot_id.clone())
                 .collect::<Vec<_>>()
@@ -245,7 +247,11 @@ impl UtilsCommand {
 
             match (start_idx, end_idx) {
                 (Some(start), Some(end)) => {
-                    let (from, to) = if start <= end { (start, end) } else { (end, start) };
+                    let (from, to) = if start <= end {
+                        (start, end)
+                    } else {
+                        (end, start)
+                    };
                     history[from..=to]
                         .iter()
                         .map(|entry| entry.snapshot_id.clone())

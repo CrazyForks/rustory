@@ -1,21 +1,21 @@
-pub mod commit;
+pub mod add;
+pub mod back;
 pub mod config;
 pub mod diff;
 pub mod history;
 pub mod ignore;
 pub mod init;
-pub mod rollback;
 pub mod status;
 pub mod tag;
 pub mod utils;
 
-pub use commit::CommitCommand;
+pub use add::AddCommand;
+pub use back::BackCommand;
 pub use config::ConfigCommand;
 pub use diff::DiffCommand;
 pub use history::HistoryCommand;
 pub use ignore::IgnoreCommand;
 pub use init::InitCommand;
-pub use rollback::RollbackCommand;
 pub use status::StatusCommand;
 pub use tag::TagCommand;
 pub use utils::UtilsCommand;

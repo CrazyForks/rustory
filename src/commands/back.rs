@@ -5,9 +5,9 @@ use walkdir::WalkDir;
 
 use crate::{Repository, utils};
 
-pub struct RollbackCommand;
+pub struct BackCommand;
 
-impl RollbackCommand {
+impl BackCommand {
     pub fn execute(snapshot_id: String, restore: bool, keep_index: bool) -> Result<()> {
         let current_dir = env::current_dir()?;
         let root = Repository::find_root(&current_dir)?;

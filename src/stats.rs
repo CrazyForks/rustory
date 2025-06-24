@@ -95,34 +95,50 @@ impl StatsCollector {
         println!("========================");
         println!("Total snapshots: {}", stats.total_snapshots);
         println!("Total objects: {}", stats.total_objects);
-        
+
         // 智能选择显示单位
-        let (original_size_str, compressed_size_str, space_saved_str) = if stats.total_size_bytes < 1024 {
-            // 小于1KB，显示字节
-            (
-                format!("{} bytes", stats.total_size_bytes),
-                format!("{} bytes", stats.compressed_size_bytes),
-                format!("{} bytes", stats.total_size_bytes as i64 - stats.compressed_size_bytes as i64),
-            )
-        } else if stats.total_size_bytes < 1024 * 1024 {
-            // 小于1MB，显示KB
-            (
-                format!("{:.2} KB", stats.total_size_bytes as f64 / 1024.0),
-                format!("{:.2} KB", stats.compressed_size_bytes as f64 / 1024.0),
-                format!("{:.2} KB", (stats.total_size_bytes as i64 - stats.compressed_size_bytes as i64) as f64 / 1024.0),
-            )
-        } else {
-            // 大于1MB，显示MB
-            (
-                format!("{:.2} MB", stats.total_size_bytes as f64 / 1024.0 / 1024.0),
-                format!("{:.2} MB", stats.compressed_size_bytes as f64 / 1024.0 / 1024.0),
-                format!("{:.2} MB", (stats.total_size_bytes as i64 - stats.compressed_size_bytes as i64) as f64 / 1024.0 / 1024.0),
-            )
-        };
+        let (original_size_str, compressed_size_str, space_saved_str) =
+            if stats.total_size_bytes < 1024 {
+                // 小于1KB，显示字节
+                (
+                    format!("{} bytes", stats.total_size_bytes),
+                    format!("{} bytes", stats.compressed_size_bytes),
+                    format!(
+                        "{} bytes",
+                        stats.total_size_bytes as i64 - stats.compressed_size_bytes as i64
+                    ),
+                )
+            } else if stats.total_size_bytes < 1024 * 1024 {
+                // 小于1MB，显示KB
+                (
+                    format!("{:.2} KB", stats.total_size_bytes as f64 / 1024.0),
+                    format!("{:.2} KB", stats.compressed_size_bytes as f64 / 1024.0),
+                    format!(
+                        "{:.2} KB",
+                        (stats.total_size_bytes as i64 - stats.compressed_size_bytes as i64) as f64
+                            / 1024.0
+                    ),
+                )
+            } else {
+                // 大于1MB，显示MB
+                (
+                    format!("{:.2} MB", stats.total_size_bytes as f64 / 1024.0 / 1024.0),
+                    format!(
+                        "{:.2} MB",
+                        stats.compressed_size_bytes as f64 / 1024.0 / 1024.0
+                    ),
+                    format!(
+                        "{:.2} MB",
+                        (stats.total_size_bytes as i64 - stats.compressed_size_bytes as i64) as f64
+                            / 1024.0
+                            / 1024.0
+                    ),
+                )
+            };
 
         println!("Original size: {}", original_size_str);
         println!("Compressed size: {}", compressed_size_str);
-        
+
         if stats.total_size_bytes > 0 {
             println!(
                 "Compression ratio: {:.2}%",
@@ -131,7 +147,7 @@ impl StatsCollector {
         } else {
             println!("Compression ratio: N/A");
         }
-        
+
         let space_saved_value = stats.total_size_bytes as i64 - stats.compressed_size_bytes as i64;
         if space_saved_value >= 0 {
             println!("Space saved: {}", space_saved_str);

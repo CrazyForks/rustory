@@ -3,9 +3,9 @@ use std::env;
 
 use crate::Repository;
 
-pub struct CommitCommand;
+pub struct AddCommand;
 
-impl CommitCommand {
+impl AddCommand {
     pub fn execute(message: Option<String>, json_output: bool) -> Result<()> {
         let current_dir = env::current_dir()?;
         let root = Repository::find_root(&current_dir)?;

@@ -198,18 +198,20 @@ impl SnapshotManager {
         }
 
         let snapshot_id = parts[0].to_string();
-        
-        // 检查是否是新格式（有number字段）
-        let (number, timestamp_idx, changes_idx) = if parts.len() >= 5 && parts[1].parse::<usize>().is_ok() {
-            // 新格式: id number timestamp changes msg="..."
-            let number = parts[1].parse()?;
-            (number, 2, 3)
-        } else {
-            // 旧格式: id timestamp changes msg="..." (向后兼容)
-            (1, 1, 2) // 默认给旧记录编号为1
-        };
 
-        let timestamp = chrono::DateTime::parse_from_rfc3339(parts[timestamp_idx])?.with_timezone(&chrono::Utc);
+        // 检查是否是新格式（有number字段）
+        let (number, timestamp_idx, changes_idx) =
+            if parts.len() >= 5 && parts[1].parse::<usize>().is_ok() {
+                // 新格式: id number timestamp changes msg="..."
+                let number = parts[1].parse()?;
+                (number, 2, 3)
+            } else {
+                // 旧格式: id timestamp changes msg="..." (向后兼容)
+                (1, 1, 2) // 默认给旧记录编号为1
+            };
+
+        let timestamp =
+            chrono::DateTime::parse_from_rfc3339(parts[timestamp_idx])?.with_timezone(&chrono::Utc);
 
         let changes: Vec<&str> = parts[changes_idx].split('/').collect();
         if changes.len() != 3 {
