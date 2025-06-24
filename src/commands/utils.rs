@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{Result, anyhow};
 use std::env;
 use std::io::{self, Write};
 
@@ -166,5 +166,113 @@ impl UtilsCommand {
         }
 
         Ok(corrupted_objects)
+    }
+
+    /// 删除特定的快照
+    pub fn remove_snapshots(target: String, dry_run: bool) -> Result<()> {
+        let current_dir = env::current_dir()?;
+        let root = Repository::find_root(&current_dir)?;
+        let repo = Repository::new(root)?;
+
+        if dry_run {
+            println!("Running in dry-run mode (no changes will be made)");
+        }
+
+        // 解析目标参数 (可能是 number, ID, number-number, ID-ID 格式)
+        if target.contains('-') {
+            // 范围删除
+            Self::remove_snapshot_range(&repo, target, dry_run)?;
+        } else {
+            // 单个删除
+            Self::remove_single_snapshot(&repo, target, dry_run)?;
+        }
+
+        Ok(())
+    }
+
+    /// 删除单个快照
+    fn remove_single_snapshot(repo: &Repository, target: String, dry_run: bool) -> Result<()> {
+        let snapshot_id = if target.chars().all(|c| c.is_ascii_digit()) {
+            // 如果是纯数字，按序号查找
+            let number: usize = target.parse()?;
+            repo.snapshot_manager.find_snapshot_by_number(number)?
+        } else {
+            // 否则当作ID处理
+            target
+        };
+
+        if dry_run {
+            println!("Would remove snapshot: {}", snapshot_id);
+        } else {
+            repo.snapshot_manager.delete_snapshot(&snapshot_id)?;
+            println!("Removed snapshot: {}", snapshot_id);
+        }
+
+        Ok(())
+    }
+
+    /// 删除范围内的快照
+    fn remove_snapshot_range(repo: &Repository, range: String, dry_run: bool) -> Result<()> {
+        let parts: Vec<&str> = range.split('-').collect();
+        if parts.len() != 2 {
+            return Err(anyhow!("Invalid range format. Use number-number or ID-ID"));
+        }
+
+        let start_str = parts[0];
+        let end_str = parts[1];
+
+        // 获取所有历史记录
+        let history = repo.snapshot_manager.list_history()?;
+
+        let snapshots_to_remove = if start_str.chars().all(|c| c.is_ascii_digit()) 
+            && end_str.chars().all(|c| c.is_ascii_digit()) {
+            // 数字范围
+            let start_num: usize = start_str.parse()?;
+            let end_num: usize = end_str.parse()?;
+
+            if start_num > end_num {
+                return Err(anyhow!("Invalid range: start number must be <= end number"));
+            }
+
+            history.iter()
+                .filter(|entry| entry.number >= start_num && entry.number <= end_num)
+                .map(|entry| entry.snapshot_id.clone())
+                .collect::<Vec<_>>()
+        } else {
+            // ID范围 - 在历史记录中找到这两个ID之间的所有快照
+            let start_idx = history.iter().position(|e| e.snapshot_id == start_str);
+            let end_idx = history.iter().position(|e| e.snapshot_id == end_str);
+
+            match (start_idx, end_idx) {
+                (Some(start), Some(end)) => {
+                    let (from, to) = if start <= end { (start, end) } else { (end, start) };
+                    history[from..=to]
+                        .iter()
+                        .map(|entry| entry.snapshot_id.clone())
+                        .collect()
+                }
+                _ => {
+                    return Err(anyhow!("One or both snapshot IDs not found"));
+                }
+            }
+        };
+
+        if snapshots_to_remove.is_empty() {
+            println!("No snapshots found in the specified range");
+            return Ok(());
+        }
+
+        println!("Found {} snapshots to remove", snapshots_to_remove.len());
+
+        for snapshot_id in &snapshots_to_remove {
+            if dry_run {
+                println!("Would remove snapshot: {}", snapshot_id);
+            } else {
+                repo.snapshot_manager.delete_snapshot(snapshot_id)?;
+                println!("Removed snapshot: {}", snapshot_id);
+            }
+        }
+
+        Ok(())
     }
 }

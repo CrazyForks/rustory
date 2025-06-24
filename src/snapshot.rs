@@ -256,4 +256,55 @@ impl SnapshotManager {
 
         Ok(())
     }
+
+    /// 删除指定的快照
+    pub fn delete_snapshot(&self, snapshot_id: &str) -> Result<()> {
+        // 删除快照元数据文件
+        let snapshot_path = self.snapshots_dir.join(format!("{}.json", snapshot_id));
+        if snapshot_path.exists() {
+            std::fs::remove_file(&snapshot_path)?;
+        } else {
+            return Err(anyhow::anyhow!("Snapshot '{}' not found", snapshot_id));
+        }
+
+        // 重写历史记录文件，删除对应的记录
+        self.remove_from_history(snapshot_id)?;
+
+        Ok(())
+    }
+
+    /// 从历史记录中删除指定的快照记录
+    fn remove_from_history(&self, snapshot_id: &str) -> Result<()> {
+        if !self.history_path.exists() {
+            return Ok(());
+        }
+
+        // 读取所有历史记录
+        let file = File::open(&self.history_path)?;
+        let reader = BufReader::new(file);
+        let mut new_lines = Vec::new();
+
+        for line in reader.lines() {
+            let line = line?;
+            if !line.starts_with(snapshot_id) {
+                new_lines.push(line);
+            }
+        }
+
+        // 重写历史文件
+        std::fs::write(&self.history_path, new_lines.join("\n") + "\n")?;
+
+        Ok(())
+    }
+
+    /// 根据序号查找快照ID
+    pub fn find_snapshot_by_number(&self, number: usize) -> Result<String> {
+        let history = self.list_history()?;
+        for entry in &history {
+            if entry.number == number {
+                return Ok(entry.snapshot_id.clone());
+            }
+        }
+        Err(anyhow::anyhow!("Snapshot with number {} not found", number))
+    }
 }

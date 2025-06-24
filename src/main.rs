@@ -137,8 +137,14 @@ fn main() {
                 ),
         )
         .subcommand(
-            Command::new("gc")
-                .about("Cleanup unnecessary files and optimize the repository")
+            Command::new("rm")
+                .about("Remove snapshots or cleanup unnecessary files")
+                .alias("gc")
+                .arg(
+                    Arg::new("target")
+                        .help("Snapshot number/ID to remove, or range (e.g., 1-3, abc123-def456)")
+                        .value_name("TARGET"),
+                )
                 .arg(
                     Arg::new("dry-run")
                         .long("dry-run")
@@ -226,11 +232,17 @@ fn main() {
             let value = sub_matches.get_one::<String>("value").cloned();
             ConfigCommand::execute(action, key, value)
         }
-        Some(("gc", sub_matches)) => {
+        Some(("rm", sub_matches)) | Some(("gc", sub_matches)) => {
+            let target = sub_matches.get_one::<String>("target").cloned();
             let dry_run = sub_matches.get_flag("dry-run");
             let aggressive = sub_matches.get_flag("aggressive");
             let prune_expired = sub_matches.get_flag("prune-expired");
-            UtilsCommand::gc(dry_run, aggressive, prune_expired)
+            
+            if let Some(target) = target {
+                UtilsCommand::remove_snapshots(target, dry_run)
+            } else {
+                UtilsCommand::gc(dry_run, aggressive, prune_expired)
+            }
         }
         Some(("stats", sub_matches)) => {
             let json = sub_matches.get_flag("json");
