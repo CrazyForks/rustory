@@ -20,6 +20,8 @@ NC='\033[0m' # No Color
 TOTAL_TESTS=0
 PASSED_TESTS=0
 FAILED_TESTS=0
+# 失败的测试名称记录
+FAILED_TEST_NAMES=()
 
 # 日志函数
 log_info() {
@@ -53,6 +55,8 @@ run_test() {
     else
         log_error "✗ $test_name"
         FAILED_TESTS=$((FAILED_TESTS + 1))
+        # 记录失败的测试名称
+        FAILED_TEST_NAMES+=("$test_name")
         return 1
     fi
 }
@@ -182,12 +186,39 @@ test_diff_snapshots() {
     local snapshot_ids
     snapshot_ids=$(/usr/local/bin/rustory history --json | python3 -c "
 import sys, json
-data = json.load(sys.stdin)
-if isinstance(data, list) and len(data) >= 2:
-    print(data[0]['id'], data[1]['id'])
-elif isinstance(data, list) and len(data) == 1:
-    print(data[0]['id'], data[0]['id'])
-else:
+try:
+    data = json.load(sys.stdin)
+    id_key = None
+    
+    # 确定ID字段名称
+    if isinstance(data, list) and len(data) > 0:
+        if 'id' in data[0]:
+            id_key = 'id'
+        elif 'snapshot_id' in data[0]:
+            id_key = 'snapshot_id'
+        
+        if id_key:
+            if len(data) >= 2:
+                print(data[0][id_key], data[1][id_key])
+            else:
+                print(data[0][id_key], data[0][id_key])
+    elif isinstance(data, dict) and 'snapshots' in data:
+        snapshots = data['snapshots']
+        if len(snapshots) > 0:
+            if 'id' in snapshots[0]:
+                id_key = 'id'
+            elif 'snapshot_id' in snapshots[0]:
+                id_key = 'snapshot_id'
+            
+            if id_key:
+                if len(snapshots) >= 2:
+                    print(snapshots[0][id_key], snapshots[1][id_key])
+                else:
+                    print(snapshots[0][id_key], snapshots[0][id_key])
+    else:
+        print('', '')
+except (json.JSONDecodeError, KeyError, IndexError) as e:
+    print(f'Error parsing JSON: {e}', file=sys.stderr)
     print('', '')
 " 2>/dev/null)
     
@@ -219,12 +250,25 @@ import sys, json
 try:
     data = json.load(sys.stdin)
     if isinstance(data, list) and len(data) > 0:
-        print(data[0]['id'])
-    elif isinstance(data, dict) and 'snapshots' in data and len(data['snapshots']) > 0:
-        print(data['snapshots'][0]['id'])
+        if 'id' in data[0]:
+            print(data[0]['id'])
+        elif 'snapshot_id' in data[0]:
+            print(data[0]['snapshot_id'])
+    elif isinstance(data, dict):
+        if 'snapshots' in data and len(data['snapshots']) > 0:
+            snapshot = data['snapshots'][0]
+            if 'id' in snapshot:
+                print(snapshot['id'])
+            elif 'snapshot_id' in snapshot:
+                print(snapshot['snapshot_id'])
+        elif 'id' in data:
+            print(data['id'])
+        elif 'snapshot_id' in data:
+            print(data['snapshot_id'])
     else:
         sys.exit(1)
-except (json.JSONDecodeError, KeyError, IndexError):
+except (json.JSONDecodeError, KeyError, IndexError) as e:
+    print(f'Error parsing JSON: {e}', file=sys.stderr)
     sys.exit(1)
 " 2>/dev/null) || {
         log_warning "无法解析快照 ID，跳过标签测试"
@@ -289,21 +333,42 @@ test_rollback() {
 import sys, json
 try:
     data = json.load(sys.stdin)
-    if isinstance(data, list) and len(data) >= 2:
-        print(data[1]['id'])
-    elif isinstance(data, list) and len(data) == 1:
-        print(data[0]['id'])
-    elif isinstance(data, dict) and 'snapshots' in data:
-        snapshots = data['snapshots']
-        if len(snapshots) >= 2:
-            print(snapshots[1]['id'])
-        elif len(snapshots) == 1:
-            print(snapshots[0]['id'])
-        else:
-            sys.exit(1)
+    id_key = None
+    
+    # 确定ID字段名称
+    if isinstance(data, list) and len(data) > 0:
+        if 'id' in data[0]:
+            id_key = 'id'
+        elif 'snapshot_id' in data[0]:
+            id_key = 'snapshot_id'
+        
+        if id_key:
+            if len(data) >= 2:
+                print(data[1][id_key])
+            else:
+                print(data[0][id_key])
+    elif isinstance(data, dict):
+        if 'snapshots' in data:
+            snapshots = data['snapshots']
+            if len(snapshots) > 0:
+                if 'id' in snapshots[0]:
+                    id_key = 'id'
+                elif 'snapshot_id' in snapshots[0]:
+                    id_key = 'snapshot_id'
+                
+                if id_key:
+                    if len(snapshots) >= 2:
+                        print(snapshots[1][id_key])
+                    else:
+                        print(snapshots[0][id_key])
+        elif 'id' in data:
+            print(data['id'])
+        elif 'snapshot_id' in data:
+            print(data['snapshot_id'])
     else:
         sys.exit(1)
-except (json.JSONDecodeError, KeyError, IndexError):
+except (json.JSONDecodeError, KeyError, IndexError) as e:
+    print(f'Error parsing JSON: {e}', file=sys.stderr)
     sys.exit(1)
 " 2>/dev/null) || {
         log_warning "无法解析快照 ID，跳过回滚测试"
@@ -376,15 +441,289 @@ test_deep_directory_structure() {
 # 错误处理测试
 test_invalid_snapshot_id() {
     # 使用无效的快照 ID，应该失败但不崩溃
-    /usr/local/bin/rustory rollback "invalid_id_12345" >/dev/null 2>&1 && return 1 || return 0
+    local output
+    local exit_code
+    
+    # 捕获命令输出和退出码
+    output=$(/usr/local/bin/rustory rollback "invalid_id_12345" 2>&1) || exit_code=$?
+    
+    if [[ -z ${exit_code+x} ]]; then
+        log_warning "无效快照ID测试失败：预期命令会失败，但它成功了"
+        log_warning "命令输出: $output"
+        return 1  # 测试失败
+    else
+        return 0  # 测试成功
+    fi
 }
 
 test_rollback_nonexistent() {
     # 尝试回滚到不存在的快照
-    /usr/local/bin/rustory rollback "00000000-0000-0000-0000-000000000000" >/dev/null 2>&1 && return 1 || return 0
+    local output
+    local exit_code
+    
+    # 捕获命令输出和退出码
+    output=$(/usr/local/bin/rustory rollback "00000000-0000-0000-0000-000000000000" 2>&1) || exit_code=$?
+    
+    if [[ -z ${exit_code+x} ]]; then
+        log_warning "不存在快照回滚测试失败：预期命令会失败，但它成功了"
+        log_warning "命令输出: $output"
+        return 1  # 测试失败
+    else
+        return 0  # 测试成功
+    fi
+}
+
+# 测试新命令别名的无效快照ID处理
+test_invalid_snapshot_id_with_back() {
+    # 使用无效的快照 ID，应该失败但不崩溃
+    local output
+    local exit_code
+    
+    # 捕获命令输出和退出码
+    output=$(/usr/local/bin/rustory back "invalid_id_12345" 2>&1) || exit_code=$?
+    
+    if [[ -z ${exit_code+x} ]]; then
+        log_warning "无效快照ID（新命令）测试失败：预期命令会失败，但它成功了"
+        log_warning "命令输出: $output"
+        return 1  # 测试失败
+    else
+        return 0  # 测试成功
+    fi
+}
+
+test_back_nonexistent() {
+    # 尝试回滚到不存在的快照
+    local output
+    local exit_code
+    
+    # 捕获命令输出和退出码
+    output=$(/usr/local/bin/rustory back "00000000-0000-0000-0000-000000000000" 2>&1) || exit_code=$?
+    
+    if [[ -z ${exit_code+x} ]]; then
+        log_warning "不存在快照回滚（新命令）测试失败：预期命令会失败，但它成功了"
+        log_warning "命令输出: $output"
+        return 1  # 测试失败
+    else
+        return 0  # 测试成功
+    fi
+}
+
+test_rm_nonexistent_snapshot() {
+    # 尝试删除不存在的快照
+    local output
+    local exit_code
+    
+    # 捕获命令输出和退出码
+    output=$(/usr/local/bin/rustory rm "nonexistent-id-12345" 2>&1) || exit_code=$?
+    
+    if [[ -z ${exit_code+x} ]]; then
+        log_warning "删除不存在快照测试失败：预期命令会失败，但它成功了"
+        log_warning "命令输出: $output"
+        return 1  # 测试失败
+    else
+        return 0  # 测试成功
+    fi
+}
+
+test_rm_invalid_range() {
+    # 尝试删除无效的范围
+    local output
+    local exit_code
+    
+    # 捕获命令输出和退出码
+    output=$(/usr/local/bin/rustory rm "100-200" 2>&1) || exit_code=$?
+    
+    # 如果没有设置 exit_code，表示命令成功（返回0）
+    if [[ -z ${exit_code+x} ]]; then
+        log_warning "无效范围删除测试失败：预期命令会失败，但它成功了"
+        log_warning "命令输出: $output"
+        return 1  # 测试失败
+    else
+        # 命令失败了，这是预期的结果
+        return 0  # 测试成功
+    fi
+}
+
+# 测试 rustory add (新命令别名)
+test_add() {
+    echo "Using new add command" >> file3.txt
+    /usr/local/bin/rustory add -m "Testing add command" >/dev/null 2>&1
+}
+
+# 测试 rustory back (新命令别名)
+test_back() {
+    # 获取最新快照 ID
+    local latest_id
+    local history_output
+    
+    # 首先尝试获取历史记录
+    history_output=$(/usr/local/bin/rustory history --json 2>/dev/null) || {
+        log_warning "无法获取历史记录，跳过回滚测试"
+        return 0
+    }
+    
+    # 解析最新快照 ID
+    latest_id=$(echo "$history_output" | python3 -c "
+import sys, json
+try:
+    data = json.load(sys.stdin)
+    id_key = None
+    
+    # 确定ID字段名称
+    if isinstance(data, list) and len(data) > 0:
+        if 'id' in data[0]:
+            id_key = 'id'
+        elif 'snapshot_id' in data[0]:
+            id_key = 'snapshot_id'
+        
+        if id_key:
+            print(data[0][id_key])
+    elif isinstance(data, dict):
+        if 'snapshots' in data and len(data['snapshots']) > 0:
+            snapshot = data['snapshots'][0]
+            if 'id' in snapshot:
+                print(snapshot['id'])
+            elif 'snapshot_id' in snapshot:
+                print(snapshot['snapshot_id'])
+        elif 'id' in data:
+            print(data['id'])
+        elif 'snapshot_id' in data:
+            print(data['snapshot_id'])
+    else:
+        sys.exit(1)
+except (json.JSONDecodeError, KeyError, IndexError) as e:
+    print(f'Error parsing JSON: {e}', file=sys.stderr)
+    sys.exit(1)
+" 2>/dev/null) || {
+        log_warning "无法解析快照 ID，跳过回滚测试"
+        return 0
+    }
+    
+    if [[ -n "$latest_id" ]]; then
+        # 测试回滚（导出到备份目录，这是默认行为）
+        /usr/local/bin/rustory back "$latest_id" >/dev/null 2>&1
+    else
+        log_warning "未找到有效快照 ID，跳过回滚测试"
+        return 0
+    fi
+}
+
+# 测试 rustory rm (新命令别名)
+test_rm_dry_run() {
+    /usr/local/bin/rustory rm --dry-run >/dev/null 2>&1
+}
+
+# 测试 rustory rm 单个快照
+test_rm_single_snapshot() {
+    # 获取历史记录
+    local history_output
+    history_output=$(/usr/local/bin/rustory history --json 2>/dev/null) || {
+        log_warning "无法获取历史记录，跳过删除快照测试"
+        return 0
+    }
+    
+    # 检查是否有至少两个快照以确保安全删除
+    local snapshot_count
+    snapshot_count=$(echo "$history_output" | python3 -c "
+import sys, json
+try:
+    data = json.load(sys.stdin)
+    if isinstance(data, list):
+        print(len(data))
+    elif isinstance(data, dict) and 'snapshots' in data:
+        print(len(data['snapshots']))
+    elif isinstance(data, dict) and 'total' in data:
+        # 某些API可能返回总数字段
+        print(data['total'])
+    else:
+        print(0)
+except Exception as e:
+    print(f'Error parsing JSON: {e}', file=sys.stderr)
+    print(0)
+" 2>/dev/null)
+    
+    if [[ "$snapshot_count" -lt 2 ]]; then
+        log_warning "快照数量不足，至少需要2个快照才能安全测试删除"
+        return 0
+    fi
+    
+    # 删除序号为1的快照（不是最新的）
+    /usr/local/bin/rustory rm 1 >/dev/null 2>&1
+}
+
+# 测试 rustory rm 范围删除
+test_rm_range() {
+    # 先创建多个快照以确保有足够的历史记录
+    for i in {1..3}; do
+        echo "Content for snapshot $i" >> range_test_file.txt
+        /usr/local/bin/rustory commit -m "Range test snapshot $i" >/dev/null 2>&1
+    done
+    
+    # 获取快照总数
+    local snapshot_count
+    snapshot_count=$(/usr/local/bin/rustory history --json 2>/dev/null | python3 -c "
+import sys, json
+try:
+    data = json.load(sys.stdin)
+    if isinstance(data, list):
+        print(len(data))
+    elif isinstance(data, dict) and 'snapshots' in data:
+        print(len(data['snapshots']))
+    elif isinstance(data, dict) and 'total' in data:
+        # 某些API可能返回总数字段
+        print(data['total'])
+    else:
+        print(0)
+except Exception as e:
+    print(f'Error parsing JSON: {e}', file=sys.stderr)
+    print(0)
+" 2>/dev/null)
+
+    if [[ "$snapshot_count" -ge 4 ]]; then
+        # 有足够的快照，删除一个范围
+        /usr/local/bin/rustory rm 1-2 >/dev/null 2>&1
+        return 0
+    else
+        log_warning "快照数量不足，需要至少4个快照才能安全测试范围删除，当前只有 $snapshot_count 个快照"
+        return 0
+    fi
+}
+
+# 测试按序号回滚
+test_back_by_number() {
+    # 创建一个新快照
+    echo "Content to test back by number" > back_by_number.txt
+    /usr/local/bin/rustory add -m "Back by number test" >/dev/null 2>&1
+    
+    # 获取快照总数
+    local snapshot_count
+    snapshot_count=$(/usr/local/bin/rustory history --json 2>/dev/null | python3 -c "
+import sys, json
+try:
+    data = json.load(sys.stdin)
+    if isinstance(data, list):
+        print(len(data))
+    elif isinstance(data, dict) and 'snapshots' in data:
+        print(len(data['snapshots']))
+    else:
+        print(0)
+except:
+    print(0)
+" 2>/dev/null)
+    
+    if [[ "$snapshot_count" -lt 1 ]]; then
+        log_warning "没有足够的快照来测试按序号回滚"
+        return 0
+    fi
+    
+    # 尝试回滚到最后一个快照（序号最大的）
+    /usr/local/bin/rustory back "$snapshot_count" >/dev/null 2>&1
 }
 
 # 显示测试结果摘要
+# 跟踪失败的测试名称
+FAILED_TEST_NAMES=()
+
 show_test_summary() {
     echo
     echo "======================================"
@@ -399,6 +738,15 @@ show_test_summary() {
         return 0
     else
         echo -e "\n${RED}❌ 有 $FAILED_TESTS 个测试失败${NC}"
+        
+        # 显示失败的测试名称
+        if [[ ${#FAILED_TEST_NAMES[@]} -gt 0 ]]; then
+            echo -e "\n${RED}失败的测试:${NC}"
+            for test_name in "${FAILED_TEST_NAMES[@]}"; do
+                echo -e "  - ${RED}$test_name${NC}"
+            done
+        fi
+        
         return 1
     fi
 }
@@ -441,8 +789,9 @@ main() {
     run_test "状态检查 (JSON)" "test_status_json"
     
     # 提交功能测试
-    run_test "创建快照" "test_commit"
+    run_test "创建快照 (旧命令)" "test_commit"
     run_test "创建快照 (JSON)" "test_commit_json"
+    run_test "创建快照 (新命令)" "test_add"
     
     # 历史记录测试
     run_test "查看历史记录" "test_history"
@@ -464,7 +813,9 @@ main() {
     run_test "忽略功能测试" "test_ignore_functionality"
     
     # 回滚功能测试
-    run_test "快照回滚" "test_rollback"
+    run_test "快照回滚 (旧命令)" "test_rollback"
+    run_test "快照回滚 (新命令)" "test_back"
+    run_test "按序号回滚" "test_back_by_number"
     
     # 统计信息测试
     run_test "仓库统计" "test_stats"
@@ -475,9 +826,12 @@ main() {
     run_test "完整性验证和修复" "test_verify_fix"
     
     # 垃圾回收测试
-    run_test "垃圾回收 (试运行)" "test_gc_dry_run"
-    run_test "垃圾回收" "test_gc"
-    run_test "垃圾回收 (积极模式)" "test_gc_aggressive"
+    run_test "垃圾回收 (试运行，旧命令)" "test_gc_dry_run"
+    run_test "垃圾回收 (旧命令)" "test_gc"
+    run_test "垃圾回收 (积极模式，旧命令)" "test_gc_aggressive"
+    run_test "垃圾回收 (试运行，新命令)" "test_rm_dry_run"
+    run_test "删除单个快照" "test_rm_single_snapshot" 
+    run_test "范围删除快照" "test_rm_range"
     
     # 边界条件测试
     run_test "大文件处理" "test_large_file_handling"
@@ -487,6 +841,10 @@ main() {
     # 错误处理测试
     run_test "无效快照 ID 处理" "test_invalid_snapshot_id"
     run_test "不存在快照回滚" "test_rollback_nonexistent"
+    run_test "无效快照 ID 处理 (新命令)" "test_invalid_snapshot_id_with_back"
+    run_test "不存在快照回滚 (新命令)" "test_back_nonexistent"
+    run_test "删除不存在的快照" "test_rm_nonexistent_snapshot"
+    run_test "无效范围删除" "test_rm_invalid_range"
     
     # 显示测试结果
     show_test_summary

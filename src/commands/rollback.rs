@@ -13,6 +13,14 @@ impl RollbackCommand {
         let root = Repository::find_root(&current_dir)?;
         let repo = Repository::new(root.clone())?;
 
+        let snapshot_id = if snapshot_id.parse::<usize>().is_ok() {
+            // 如果 snapshot_id 是数字，尝试通过快照编号解析
+            repo.resolve_snapshot_number(&repo, snapshot_id.parse::<usize>()?)?
+        } else {
+            // 否则直接使用 snapshot_id
+            snapshot_id
+        };
+
         if restore {
             // 直接恢复到工作区
             Self::restore_to_working_dir(&repo, &root, &snapshot_id, keep_index)?;
@@ -112,5 +120,16 @@ impl RollbackCommand {
         );
 
         Ok(())
+    }
+}
+
+impl Repository {
+    pub fn resolve_snapshot_number(&self, repo: &Repository, number: usize) -> Result<String> {
+        let history = repo.snapshot_manager.list_history()?;
+        history
+            .iter()
+            .find(|entry| entry.number == number)
+            .map(|entry| entry.snapshot_id.clone())
+            .ok_or_else(|| anyhow::anyhow!("Snapshot number {} not found", number))
     }
 }

@@ -1,5 +1,7 @@
 # Rustory
 
+[English](README_en.md) | **[简体中文](README.md)**
+
 > 🚀 **轻量级本地版本管理工具** - 用 Rust 编写的高性能版本控制系统
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
