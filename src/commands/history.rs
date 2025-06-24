@@ -22,10 +22,10 @@ impl HistoryCommand {
             }
 
             println!(
-                "{:<8} {:<20} {:>2} {:>2} {:>2} Message",
-                "ID", "Time", "+", "~", "-"
+                "{:<3} {:<8} {:<20} {:>2} {:>2} {:>2} Message",
+                "#", "ID", "Time", "+", "~", "-"
             );
-            println!("{}", "-".repeat(60));
+            println!("{}", "-".repeat(68));
 
             for entry in &history {
                 // 根据配置决定显示UTC时间还是本地时间
@@ -40,7 +40,8 @@ impl HistoryCommand {
                 };
 
                 println!(
-                    "{:<8} {:<20} {:>2} {:>2} {:>2} \"{}\"",
+                    "{:<3} {:<8} {:<20} {:>2} {:>2} {:>2} \"{}\"",
+                    entry.number,
                     entry.snapshot_id,
                     time_display,
                     entry.added,

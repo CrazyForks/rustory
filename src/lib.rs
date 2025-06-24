@@ -44,6 +44,8 @@ impl Index {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SnapshotMetadata {
     pub id: String,
+    #[serde(default = "default_number")]
+    pub number: usize,
     pub timestamp: chrono::DateTime<chrono::Utc>,
     pub message: String,
     pub added: usize,
@@ -52,9 +54,14 @@ pub struct SnapshotMetadata {
     pub files: HashMap<PathBuf, FileEntry>,
 }
 
+fn default_number() -> usize {
+    1
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HistoryEntry {
     pub snapshot_id: String,
+    pub number: usize,
     pub timestamp: chrono::DateTime<chrono::Utc>,
     pub added: usize,
     pub modified: usize,

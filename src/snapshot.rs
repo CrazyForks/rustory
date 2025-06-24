@@ -75,6 +75,9 @@ impl SnapshotManager {
             }
         }
 
+        // 计算提交序号（基于现有历史记录数量）
+        let number = self.list_history().unwrap_or_default().len() + 1;
+
         // 生成快照ID（基于时间戳、随机数和内容的哈希）
         let timestamp = chrono::Utc::now();
         use std::collections::hash_map::DefaultHasher;
@@ -102,6 +105,7 @@ impl SnapshotManager {
         // 创建快照元数据
         let snapshot = SnapshotMetadata {
             id: snapshot_id.clone(),
+            number,
             timestamp,
             message: message.clone(),
             added,
@@ -122,6 +126,7 @@ impl SnapshotManager {
         // 写入历史日志
         let history_entry = HistoryEntry {
             snapshot_id: snapshot_id.clone(),
+            number,
             timestamp,
             added,
             modified,
@@ -167,8 +172,9 @@ impl SnapshotManager {
 
     fn append_history(&self, entry: &HistoryEntry) -> Result<()> {
         let line = format!(
-            "{} {} {}/{}/{} msg=\"{}\"\n",
+            "{} {} {} {}/{}/{} msg=\"{}\"\n",
             entry.snapshot_id,
+            entry.number,
             entry.timestamp.format("%Y-%m-%dT%H:%M:%S%.3fZ"),
             entry.added,
             entry.modified,
@@ -192,9 +198,20 @@ impl SnapshotManager {
         }
 
         let snapshot_id = parts[0].to_string();
-        let timestamp = chrono::DateTime::parse_from_rfc3339(parts[1])?.with_timezone(&chrono::Utc);
+        
+        // 检查是否是新格式（有number字段）
+        let (number, timestamp_idx, changes_idx) = if parts.len() >= 5 && parts[1].parse::<usize>().is_ok() {
+            // 新格式: id number timestamp changes msg="..."
+            let number = parts[1].parse()?;
+            (number, 2, 3)
+        } else {
+            // 旧格式: id timestamp changes msg="..." (向后兼容)
+            (1, 1, 2) // 默认给旧记录编号为1
+        };
 
-        let changes: Vec<&str> = parts[2].split('/').collect();
+        let timestamp = chrono::DateTime::parse_from_rfc3339(parts[timestamp_idx])?.with_timezone(&chrono::Utc);
+
+        let changes: Vec<&str> = parts[changes_idx].split('/').collect();
         if changes.len() != 3 {
             return Err(anyhow::anyhow!("Invalid changes format"));
         }
@@ -213,6 +230,7 @@ impl SnapshotManager {
 
         Ok(HistoryEntry {
             snapshot_id,
+            number,
             timestamp,
             added,
             modified,
