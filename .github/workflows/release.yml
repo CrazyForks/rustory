@@ -105,11 +105,12 @@ jobs:
         shell: bash
         run: |
           if [[ "${{ runner.os }}" == "Windows" ]]; then
-            sha256sum ${{ steps.archive.outputs.name }} | cut -d ' ' -f 1 > ${{ steps.archive.outputs.name }}.sha256
+            hash=$(sha256sum ${{ steps.archive.outputs.name }} | cut -d ' ' -f 1)
           else
-            shasum -a 256 ${{ steps.archive.outputs.name }} | cut -d ' ' -f 1 > ${{ steps.archive.outputs.name }}.sha256
+            hash=$(shasum -a 256 ${{ steps.archive.outputs.name }} | cut -d ' ' -f 1)
           fi
-          echo "hash=$(cat ${{ steps.archive.outputs.name }}.sha256)" >> $GITHUB_OUTPUT
+          echo "hash=$hash" >> $GITHUB_OUTPUT
+          echo "${{ steps.archive.outputs.name }} \`$hash\`" > sha256.txt
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -117,7 +118,7 @@ jobs:
           name: ${{ steps.archive.outputs.name }}
           path: |
             ${{ steps.archive.outputs.name }}
-            ${{ steps.archive.outputs.name }}.sha256
+            sha256.txt
 
   release:
     name: Create Release
@@ -140,15 +141,27 @@ jobs:
       - name: Prepare release files
         run: |
           mkdir -p release
-          find artifacts -type f \( -name "*.zip" -o -name "*.tar.gz" -o -name "*.sha256" \) | while read file; do
+          find artifacts -type f \( -name "*.zip" -o -name "*.tar.gz" \) | while read file; do
             cp "$file" release/
           done
+
+      - name: Generate SHA256 list
+        id: sha256-list
+        run: |
+          echo "## SHA256 Checksums" > SHA256SUMS.txt
+          find artifacts -name "sha256.txt" | sort | while read file; do
+            cat "$file" | while read line; do
+              echo "- $line" >> SHA256SUMS.txt
+            done
+          done
+          cat SHA256SUMS.txt
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
             release/*
+          body_path: SHA256SUMS.txt
           draft: false
           prerelease: false
         env:
