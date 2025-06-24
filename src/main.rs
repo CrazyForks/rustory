@@ -17,8 +17,9 @@ fn main() {
                 ),
         )
         .subcommand(
-            Command::new("commit")
+            Command::new("add")
                 .about("Create a new snapshot")
+                .alias("commit")
                 .alias("log")
                 .arg(
                     Arg::new("message")
@@ -69,8 +70,9 @@ fn main() {
                 .arg(Arg::new("id2").help("Second snapshot ID").value_name("ID2")),
         )
         .subcommand(
-            Command::new("rollback")
+            Command::new("back")
                 .about("Rollback to a previous snapshot")
+                .alias("rollback")
                 .arg(
                     Arg::new("id")
                         .help("Snapshot ID to rollback to")
@@ -184,7 +186,7 @@ fn main() {
             let path = sub_matches.get_one::<PathBuf>("path").cloned();
             InitCommand::execute(path)
         }
-        Some(("commit", sub_matches)) => {
+        Some(("add", sub_matches)) | Some(("commit", sub_matches)) => {
             let message = sub_matches.get_one::<String>("message").cloned();
             let json = sub_matches.get_flag("json");
             CommitCommand::execute(message, json)
@@ -203,7 +205,7 @@ fn main() {
             let id2 = sub_matches.get_one::<String>("id2").cloned();
             DiffCommand::execute(id1, id2)
         }
-        Some(("rollback", sub_matches)) => {
+        Some(("back", sub_matches)) | Some(("rollback", sub_matches)) => {
             let id = sub_matches.get_one::<String>("id").unwrap().clone();
             let restore = sub_matches.get_flag("restore");
             let keep_index = sub_matches.get_flag("keep-index");

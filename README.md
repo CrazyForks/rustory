@@ -149,7 +149,7 @@ rustory init /path/to/project
 rustory status
 
 # 2. 创建快照
-rustory commit -m "初始版本"
+rustory add -m "初始版本"
 
 # 3. 查看历史
 rustory history
@@ -158,7 +158,7 @@ rustory history
 rustory diff
 
 # 5. 回滚更改
-rustory rollback abc123
+rustory back abc123
 ```
 
 ## 📋 命令详解
@@ -173,18 +173,22 @@ rustory init [path]
 - **参数**: `[path]` - 可选，指定初始化路径，默认当前目录
 - **效果**: 创建 `.rustory` 目录结构，生成默认配置
 
-#### `rustory commit` - 创建快照
+#### `rustory add` - 创建快照
 ```bash
-rustory commit -m "提交信息" [--json]
+rustory add -m "提交信息" [--json]
 ```
 - **功能**: 保存当前工作目录状态为新快照
+- **别名**: `commit` (保持向后兼容)
 - **参数**: 
   - `-m, --message <MSG>` - 快照描述信息
   - `--json` - 以 JSON 格式输出结果
 - **示例**:
   ```bash
-  rustory commit -m "修复解析器错误"
+  rustory add -m "修复解析器错误"
   # 输出: [snapshot ab12cd] 2025-06-18T15:30:00  added=2 modified=1 deleted=0
+  
+  # 使用旧别名（兼容模式）
+  rustory commit -m "修复解析器错误"
   ```
 
 #### `rustory status` - 查看状态
@@ -225,16 +229,24 @@ rustory diff [snapshot1] [snapshot2]
   - 两个参数: 两个快照之间比较
 - **输出**: 彩色的行级差异显示
 
-#### `rustory rollback` - 回滚更改
+#### `rustory back` - 回滚更改
 ```bash
-rustory rollback <snapshot_id> [--restore] [--keep-index]
+rustory back <snapshot_id> [--restore] [--keep-index]
 ```
 - **功能**: 恢复到指定快照状态
+- **别名**: `rollback` (保持向后兼容)
 - **参数**:
   - `<snapshot_id>` - 目标快照 ID 或标签
   - `--restore` - 直接恢复到工作目录（先备份当前状态）
   - `--keep-index` - 不更新索引文件
 - **安全机制**: 默认导出到 `backup-<timestamp>/` 目录
+- **示例**:
+  ```bash
+  rustory back abc123
+  
+  # 使用旧别名（兼容模式）
+  rustory rollback abc123
+  ```
 
 ### 管理命令
 
@@ -246,7 +258,7 @@ rustory tag <tag_name> <snapshot_id>
 - **示例**: 
   ```bash
   rustory tag v1.0 ab12cd
-  rustory rollback v1.0  # 使用标签回滚
+  rustory back v1.0  # 使用标签回滚
   ```
 
 #### `rustory ignore` - 忽略规则
@@ -338,7 +350,7 @@ rustory gc              # 执行清理
 
 ```bash
 # 批量提交多个更改
-find . -name "*.rs" -newer .rustory/index.json | rustory commit -m "批量更新"
+find . -name "*.rs" -newer .rustory/index.json | rustory add -m "批量更新"
 
 # 基于模式的快照清理
 rustory gc --prune-expired --pattern "temp-*"
@@ -379,11 +391,11 @@ rustory status --verbose | grep "large"
 #### 回滚冲突
 ```bash
 # 保存当前工作后回滚
-rustory commit -m "临时保存"
-rustory rollback <target_snapshot>
+rustory add -m "临时保存"
+rustory back <target_snapshot>
 
 # 或使用备份模式
-rustory rollback <target_snapshot> --restore
+rustory back <target_snapshot> --restore
 ```
 
 #### 存储空间问题
@@ -445,7 +457,7 @@ rustory init --force
 
 ```bash
 # 查看操作耗时
-time rustory commit -m "性能测试"
+time rustory add -m "性能测试"
 
 # 监控存储使用
 rustory stats | grep "Size"
@@ -462,8 +474,8 @@ rustory stats | grep "Compression"
 ```json
 // settings.json
 {
-  "rustory.autoCommit": true,
-  "rustory.commitInterval": 3600,
+  "rustory.autoAdd": true,
+  "rustory.addInterval": 3600,
   "rustory.showStatus": true
 }
 ```
@@ -471,7 +483,7 @@ rustory stats | grep "Compression"
 #### Vim
 ```vim
 " .vimrc
-autocmd BufWritePost * silent! !rustory commit -m "Auto save"
+autocmd BufWritePost * silent! !rustory add -m "Auto save"
 ```
 
 ### CI/CD 集成
@@ -488,7 +500,7 @@ jobs:
       - name: Create snapshot
         run: |
           rustory init
-          rustory commit -m "CI Build ${{ github.run_number }}"
+          rustory add -m "CI Build ${{ github.run_number }}"
 ```
 
 #### Shell 脚本集成
@@ -498,13 +510,13 @@ jobs:
 set -e
 
 echo "创建部署前快照..."
-rustory commit -m "Pre-deploy snapshot $(date)"
+rustory add -m "Pre-deploy snapshot $(date)"
 
 echo "执行部署..."
 ./deploy.sh
 
 echo "创建部署后快照..."
-rustory commit -m "Post-deploy snapshot $(date)"
+rustory add -m "Post-deploy snapshot $(date)"
 ```
 
 ## 🎯 与其他工具对比
@@ -553,17 +565,17 @@ rustory commit -m "Post-deploy snapshot $(date)"
 # 个人脚本版本管理
 cd ~/scripts
 rustory init
-rustory commit -m "添加备份脚本"
+rustory add -m "添加备份脚本"
 
 # 配置文件快照
 cd ~/.config
 rustory init
-rustory commit -m "系统配置基线"
+rustory add -m "系统配置基线"
 
 # 快速实验原型
 cd ~/experiments/ml-model
 rustory init
-rustory commit -m "初始模型版本"
+rustory add -m "初始模型版本"
 ```
 
 #### 🎯 何时选择 Git
@@ -587,7 +599,7 @@ git pull-request
 git commit -m "完成新功能开发"
 
 # 使用 Rustory 进行频繁的本地快照
-rustory commit -m "临时保存：调试中间状态"
+rustory add -m "临时保存：调试中间状态"
 ```
 
 ### 迁移指南
@@ -598,7 +610,7 @@ rustory commit -m "临时保存：调试中间状态"
 # 导出 Git 历史快照
 git log --oneline | while read commit; do
     git checkout $commit
-    rustory commit -m "迁移：$commit"
+    rustory add -m "迁移：$commit"
 done
 ```
 
@@ -609,7 +621,7 @@ done
 git init
 
 # 基于 Rustory 快照创建初始提交
-rustory rollback <latest_snapshot> --restore
+rustory back <latest_snapshot> --restore
 git add .
 git commit -m "从 Rustory 迁移的初始版本"
 ```
