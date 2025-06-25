@@ -49,21 +49,21 @@ Download the precompiled binary for your system from [GitHub Releases](https://g
    - macOS: `rustory-x86_64-apple-darwin.tar.gz` or `rustory-aarch64-apple-darwin.tar.gz`
    - Linux: `rustory-x86_64-unknown-linux-musl.tar.gz` or `rustory-aarch64-unknown-linux-musl.tar.gz`
 
-3. **Verify file integrity** (recommended):
-   ```bash
-   # macOS/Linux
-   shasum -a 256 rustory-*.tar.gz
-   # Windows (PowerShell)
-   Get-FileHash -Algorithm SHA256 rustory-*.zip
-   ```
-   Compare with the SHA256 value on the release page.
-
-4. **Extract and install**:
+3. **Extract and install**:
    ```bash
    # Linux/macOS
    tar -xzf rustory-*.tar.gz
    sudo mv rustory /usr/local/bin/
    # Windows: Extract ZIP and move rustory.exe to a directory in PATH
+   ```
+
+4. **Create a symlink (recommended)**:
+
+   It's recommended to create a symlink for easier access:
+   ```bash
+   # Linux/macOS
+   sudo ln -s /usr/local/bin/rustory /usr/bin/rty
+   # Now, you can run `rty` from anywhere for convenience
    ```
 
 ### Method 2: One-Click Install Script (Linux/macOS)
