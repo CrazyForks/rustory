@@ -112,6 +112,7 @@ jobs:
             ${{ runner.os }}-cargo-
 
       - name: Build binary
+        shell: bash
         run: |
           if [[ "${{ matrix.target }}" == *"musl"* && "${{ matrix.os }}" == "ubuntu-latest" ]]; then
             # For MUSL targets on Linux, enable static linking
