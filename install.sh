@@ -246,9 +246,9 @@ download_and_install() {
     # 根据操作系统和架构确定下载文件名
     if [[ "$OS" == "linux" ]]; then
         if [[ "$ARCH" == "x86_64" ]]; then
-            archive_name="rustory-x86_64-unknown-linux-gnu.tar.gz"
+            archive_name="rustory-x86_64-unknown-linux-musl.tar.gz"
         elif [[ "$ARCH" == "aarch64" ]]; then
-            archive_name="rustory-aarch64-unknown-linux-gnu.tar.gz"
+            archive_name="rustory-aarch64-unknown-linux-musl.tar.gz"
         fi
     elif [[ "$OS" == "macos" ]]; then
         if [[ "$ARCH" == "x86_64" ]]; then
