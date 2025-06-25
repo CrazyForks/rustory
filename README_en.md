@@ -663,7 +663,7 @@ git commit -m "Initial version from Rustory"
 
 ## 📈 Roadmap
 
-### Current Version (v40.1.4)
+### Current Version (v0.1.5)
 - ✅ Core version control
 - ✅ Basic storage optimization
 - ✅ GC mechanism
