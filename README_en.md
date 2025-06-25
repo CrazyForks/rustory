@@ -73,13 +73,13 @@ For Linux and macOS users, we provide a convenient one-click installation script
 #### Quick Install
 ```bash
 # Install or update Rustory
-curl -fsSL https://raw.githubusercontent.com/uselibrary/rustory/refs/heads/master/install.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/uselibrary/rustory/refs/heads/master/install_en.sh | sudo bash
 ```
 
 #### Manual Download and Install
 ```bash
 # Download the script
-curl -fsSL https://raw.githubusercontent.com/uselibrary/rustory/refs/heads/master/install.sh -o install.sh
+curl -fsSL https://raw.githubusercontent.com/uselibrary/rustory/refs/heads/master/install.sh_en -o install.sh
 # Make it executable and run
 chmod +x install.sh
 sudo ./install.sh install
