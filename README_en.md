@@ -8,6 +8,8 @@
 [![Rust](https://img.shields.io/badge/rust-1.70+-orange.svg)](https://www.rust-lang.org)
 [![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows-lightgrey.svg)](https://github.com/uselibrary/rustory)
 
+![rustory_logo](https://raw.githubusercontent.com/uselibrary/rustory/master/assets/rustory_logo.png width=60%)
+
 ## ✨ Project Overview
 
 Rustory (**Rust** + His**tory**) is a Rust-based version control tool designed to help developers easily manage project snapshots, history, and configuration. It provides Git-like features but focuses on simplicity and ease of use. Rustory is a lightweight local version control tool supporting Linux, macOS, and Windows, with no external command or script interpreter dependencies. It tracks, snapshots, and restores project file changes efficiently.
