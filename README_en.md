@@ -54,17 +54,26 @@ Download the precompiled binary for your system from [GitHub Releases](https://g
    # Linux/macOS
    tar -xzf rustory-*.tar.gz
    sudo mv rustory /usr/local/bin/
-   # Windows: Extract ZIP and move rustory.exe to a directory in PATH
+   # Windows: Extract ZIP and move rustory.exe to a directory in PATH; or place it in `C:\Windows\System32\`.
+   C:\Windows\System32\rustory.exe
    ```
 
 4. **Create a symlink (recommended)**:
 
-   It's recommended to create a symlink for easier access:
+   It's recommended to create a symlink for easier access.
+   For Linux/macOS users:
    ```bash
    # Linux/macOS
    sudo ln -s /usr/local/bin/rustory /usr/bin/rty
    # Now, you can run `rty` from anywhere for convenience
    ```
+   For Windows users, powershell can create a symlink (Administrator privileges required):
+   ```powershell
+   # Windows PowerShell
+   New-Item -ItemType SymbolicLink -Path "C:\Windows\System32\rty.exe" -Target "C:\Windows\System32\rustory.exe"
+   # Now, you can run `rty` from anywhere in the command prompt
+  ```
+
 
 ### Method 2: One-Click Install Script (Linux/macOS)
 

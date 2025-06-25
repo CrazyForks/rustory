@@ -55,14 +55,21 @@ Rustory（**Rust** + His**tory**）是一个基于 Rust 的版本控制工具，
    tar -xzf rustory-*.tar.gz
    sudo mv rustory /usr/local/bin/
    
-   # Windows: 解压 ZIP 文件，将 rustory.exe 移动到 PATH 中的目录
+   # Windows: 解压 ZIP 文件，将 rustory.exe 移动到 PATH 中的目录；或者直接将其放在 C:\Windows\System32\ 目录下。
+   C:\Windows\System32\rustory.exe
    ```
 
 4. **创建软链接** (推荐)：
 
-    对于Linux和macOS用户，可以创建软链接以简化命令输入：
+    推荐创建软链接以简化命令输入。
+    对于Linux和macOS用户：
    ```bash
    sudo ln -s /usr/local/bin/rustory /usr/local/bin/rty
+   # 现在可以通过 'rty' 命令使用 rustory
+   ```
+   对于 Windows 用户，可以在 PowerShell 中创建软链接（需要管理员权限）：
+   ```powershell
+   New-Item -ItemType SymbolicLink -Path "C:\Windows\System32\rty.exe" -Target "C:\Windows\System32\rustory.exe"
    # 现在可以通过 'rty' 命令使用 rustory
    ```
 
