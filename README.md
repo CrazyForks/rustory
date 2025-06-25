@@ -75,7 +75,7 @@ Rustory（**Rust** + His**tory**）是一个基于 Rust 的版本控制工具，
 #### 快速安装
 ```bash
 # 安装或更新 Rustory
-curl -fsSL https://gh-proxy.com/https://raw.githubusercontent.com/uselibrary/rustory/refs/heads/master/install.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/uselibrary/rustory/refs/heads/master/install.sh | sudo bash
 ```
 
 #### 手动下载安装

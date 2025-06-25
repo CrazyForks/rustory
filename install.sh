@@ -13,17 +13,7 @@ PROJECT_NAME="rustory"
 INSTALL_DIR="/usr/local/bin"
 BINARY_NAME="rustory"
 GITHUB_REPO="uselibrary/rustory"
-GITHUB_BASE_URL="https://github.com"
 GITHUB_API_URL="https://api.github.com/repos/${GITHUB_REPO}/releases/latest"
-
-# 国内镜像列表
-MIRROR_URLS=(
-    "https://gh-proxy.com/https://github.com"
-    "https://ghfast.top/https://github.com"
-)
-
-# 当前使用的基础URL
-CURRENT_BASE_URL="$GITHUB_BASE_URL"
 
 # 颜色定义
 RED='\033[0;31m'
@@ -170,19 +160,6 @@ get_latest_version() {
         return 1
     fi
     
-    # 检查是否是HTML响应（某些镜像可能返回网页而不是API响应）
-    if echo "$response" | grep -q "<!DOCTYPE\|<html"; then
-        log_warn "镜像返回了网页而不是API响应，尝试解析发布页面"
-        # 如果是HTML，尝试回退到原始GitHub API
-        if [[ "$GITHUB_API_URL" != "https://api.github.com/repos/${GITHUB_REPO}/releases/latest" ]]; then
-            GITHUB_API_URL="https://api.github.com/repos/${GITHUB_REPO}/releases/latest"
-            response=$(curl -s --connect-timeout 10 --max-time 30 "$GITHUB_API_URL" 2>/dev/null)
-            if [[ $? -ne 0 || -z "$response" ]]; then
-                return 1
-            fi
-        fi
-    fi
-    
     # 检查是否有 jq
     if command -v jq &> /dev/null; then
         local version
@@ -213,8 +190,8 @@ get_download_url() {
     local version="$1"
     local archive_name="$2"
     
-    # 构建下载 URL，使用当前选择的基础URL
-    echo "${CURRENT_BASE_URL}/${GITHUB_REPO}/releases/download/v${version}/${archive_name}"
+    # 构建下载 URL
+    echo "https://github.com/${GITHUB_REPO}/releases/download/v${version}/${archive_name}"
 }
 
 # 版本比较函数
@@ -295,44 +272,9 @@ download_and_install() {
     local temp_dir=$(mktemp -d)
     local archive_path="$temp_dir/$archive_name"
     
-    # 下载文件（带重试机制）
-    local download_success=false
-    local original_base_url="$CURRENT_BASE_URL"
-    
-    # 尝试当前镜像下载
-    if curl -L -o "$archive_path" "$download_url" --connect-timeout 10 --max-time 300; then
-        download_success=true
-    else
-        log_warn "使用当前镜像下载失败，尝试其他镜像..."
-        
-        # 如果当前不是原始GitHub，尝试原始GitHub
-        if [[ "$CURRENT_BASE_URL" != "$GITHUB_BASE_URL" ]]; then
-            CURRENT_BASE_URL="$GITHUB_BASE_URL"
-            download_url=$(get_download_url "$latest_version" "$archive_name")
-            log_info "尝试原始 GitHub: $download_url"
-            if curl -L -o "$archive_path" "$download_url" --connect-timeout 10 --max-time 300; then
-                download_success=true
-            fi
-        fi
-        
-        # 如果仍然失败，尝试所有镜像
-        if [[ "$download_success" != "true" ]]; then
-            for mirror in "${MIRROR_URLS[@]}"; do
-                if [[ "$mirror" != "$original_base_url" ]]; then
-                    CURRENT_BASE_URL="$mirror"
-                    download_url=$(get_download_url "$latest_version" "$archive_name")
-                    log_info "尝试镜像: $download_url"
-                    if curl -L -o "$archive_path" "$download_url" --connect-timeout 10 --max-time 300; then
-                        download_success=true
-                        break
-                    fi
-                fi
-            done
-        fi
-    fi
-    
-    if [[ "$download_success" != "true" ]]; then
-        log_error "所有下载尝试都失败了"
+    # 下载文件
+    if ! curl -L -o "$archive_path" "$download_url" --connect-timeout 10 --max-time 300; then
+        log_error "下载失败"
         rm -rf "$temp_dir"
         exit 1
     fi
@@ -386,9 +328,6 @@ download_and_install() {
 # 安装函数
 install_rustory() {
     log_info "开始安装 rustory..."
-    
-    # 选择可用的镜像
-    select_mirror
     
     # 获取最新版本
     log_info "正在获取最新版本信息..."
@@ -474,51 +413,6 @@ uninstall_rustory() {
         log_error "卸载失败"
         exit 1
     fi
-}
-
-# 检测网络连通性
-test_connectivity() {
-    local url="$1"
-    local timeout="${2:-5}"
-    
-    # 尝试连接GitHub首页或镜像站
-    if curl -s --connect-timeout "$timeout" --max-time "$timeout" "${url}" > /dev/null 2>&1; then
-        return 0
-    else
-        return 1
-    fi
-}
-
-# 自动选择可用的镜像
-select_mirror() {
-    log_info "检测网络连通性..."
-    
-    # 首先测试原始GitHub
-    if test_connectivity "$GITHUB_BASE_URL"; then
-        log_info "GitHub 直连可用"
-        CURRENT_BASE_URL="$GITHUB_BASE_URL"
-        GITHUB_API_URL="https://api.github.com/repos/${GITHUB_REPO}/releases/latest"
-        return 0
-    fi
-    
-    log_warn "GitHub 直连不可用，尝试国内镜像..."
-    
-    # 尝试各个镜像
-    for mirror in "${MIRROR_URLS[@]}"; do
-        log_info "测试镜像: $mirror"
-        if test_connectivity "$mirror"; then
-            log_info "使用镜像: $mirror"
-            CURRENT_BASE_URL="$mirror"
-            # 镜像站的API URL需要特殊处理
-            GITHUB_API_URL="${mirror}/repos/${GITHUB_REPO}/releases/latest"
-            return 0
-        fi
-    done
-    
-    log_error "所有镜像都不可用，回退到原始 GitHub"
-    CURRENT_BASE_URL="$GITHUB_BASE_URL"
-    GITHUB_API_URL="https://api.github.com/repos/${GITHUB_REPO}/releases/latest"
-    return 1
 }
 
 # 主函数
