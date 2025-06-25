@@ -40,7 +40,7 @@ Rustory（**Rust** + His**tory**）是一个基于 Rust 的版本控制工具，
 #### 支持的平台
 - **Windows**: x64、ARM64
 - **macOS**: x64 (Intel)、ARM64 (Apple Silicon)
-- **Linux**: x64、ARM64
+- **Linux**: x64、ARM64 (推荐使用 musl 构建版本以获得更好的兼容性)
 
 #### 下载和校验
 1. 访问 [最新发布页面](https://github.com/uselibrary/rustory/releases/latest)

@@ -40,7 +40,7 @@ Download the precompiled binary for your system from [GitHub Releases](https://g
 #### Supported Platforms
 - **Windows**: x64, ARM64
 - **macOS**: x64 (Intel), ARM64 (Apple Silicon)
-- **Linux**: x64, ARM64
+- **Linux**: x64, ARM64 (Built with `musl` are recommended for better compatibility across distributions)
 
 #### Download & Verify
 1. Visit the [latest release page](https://github.com/uselibrary/rustory/releases/latest)
