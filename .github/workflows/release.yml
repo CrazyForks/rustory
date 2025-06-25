@@ -33,11 +33,18 @@ jobs:
           - target: aarch64-apple-darwin
             os: macos-latest
             exe: ""
-          # Linux
+          # Linux (using older Ubuntu for better GLIBC compatibility)
           - target: x86_64-unknown-linux-gnu
             os: ubuntu-latest
             exe: ""
           - target: aarch64-unknown-linux-gnu
+            os: ubuntu-latest
+            exe: ""
+          # Linux with MUSL (static linking, no GLIBC dependency)
+          - target: x86_64-unknown-linux-musl
+            os: ubuntu-latest
+            exe: ""
+          - target: aarch64-unknown-linux-musl
             os: ubuntu-latest
             exe: ""
 
@@ -51,16 +58,46 @@ jobs:
           targets: ${{ matrix.target }}
 
       - name: Install cross-compilation tools (Linux)
-        if: matrix.os == 'ubuntu-latest' && matrix.target == 'aarch64-unknown-linux-gnu'
+        if: matrix.os == 'ubuntu-latest' && (matrix.target == 'aarch64-unknown-linux-gnu' || matrix.target == 'aarch64-unknown-linux-musl')
         run: |
           sudo apt-get update
           sudo apt-get install -y gcc-aarch64-linux-gnu
 
+      - name: Install MUSL tools
+        if: matrix.os == 'ubuntu-latest' && contains(matrix.target, 'musl')
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y musl-tools
+          if [[ "${{ matrix.target }}" == "x86_64-unknown-linux-musl" ]]; then
+            sudo ln -sf /usr/bin/musl-gcc /usr/local/bin/x86_64-linux-musl-gcc
+          elif [[ "${{ matrix.target }}" == "aarch64-unknown-linux-musl" ]]; then
+            sudo apt-get install -y gcc-aarch64-linux-gnu
+            # Create a wrapper for aarch64 musl gcc
+            echo '#!/bin/bash' | sudo tee /usr/local/bin/aarch64-linux-musl-gcc
+            echo 'exec aarch64-linux-gnu-gcc "$@"' | sudo tee -a /usr/local/bin/aarch64-linux-musl-gcc
+            sudo chmod +x /usr/local/bin/aarch64-linux-musl-gcc
+          fi
+
       - name: Configure cross-compilation (Linux ARM64)
         if: matrix.os == 'ubuntu-latest' && matrix.target == 'aarch64-unknown-linux-gnu'
         run: |
+          mkdir -p ~/.cargo
           echo '[target.aarch64-unknown-linux-gnu]' >> ~/.cargo/config.toml
           echo 'linker = "aarch64-linux-gnu-gcc"' >> ~/.cargo/config.toml
+
+      - name: Configure cross-compilation (Linux ARM64 MUSL)
+        if: matrix.os == 'ubuntu-latest' && matrix.target == 'aarch64-unknown-linux-musl'
+        run: |
+          mkdir -p ~/.cargo
+          echo '[target.aarch64-unknown-linux-musl]' >> ~/.cargo/config.toml
+          echo 'linker = "aarch64-linux-musl-gcc"' >> ~/.cargo/config.toml
+
+      - name: Configure cross-compilation (Linux x86_64 MUSL)
+        if: matrix.os == 'ubuntu-latest' && matrix.target == 'x86_64-unknown-linux-musl'
+        run: |
+          mkdir -p ~/.cargo
+          echo '[target.x86_64-unknown-linux-musl]' >> ~/.cargo/config.toml
+          echo 'linker = "x86_64-linux-musl-gcc"' >> ~/.cargo/config.toml
 
       - name: Cache cargo registry
         uses: actions/cache@v4
@@ -75,7 +112,12 @@ jobs:
             ${{ runner.os }}-cargo-
 
       - name: Build binary
-        run: cargo build --release --target ${{ matrix.target }}
+        run: |
+          if [[ "${{ matrix.target }}" == *"musl"* ]]; then
+            # For MUSL targets, enable static linking
+            export RUSTFLAGS="-C target-feature=+crt-static"
+          fi
+          cargo build --release --target ${{ matrix.target }}
 
       - name: Create archive name
         id: archive
