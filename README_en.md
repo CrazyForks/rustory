@@ -47,7 +47,7 @@ Download the precompiled binary for your system from [GitHub Releases](https://g
 2. Choose the file for your system:
    - Windows: `rustory-x86_64-pc-windows-msvc.zip` or `rustory-aarch64-pc-windows-msvc.zip`
    - macOS: `rustory-x86_64-apple-darwin.tar.gz` or `rustory-aarch64-apple-darwin.tar.gz`
-   - Linux: `rustory-x86_64-unknown-linux-gnu.tar.gz` or `rustory-aarch64-unknown-linux-gnu.tar.gz`
+   - Linux: `rustory-x86_64-unknown-linux-musl.tar.gz` or `rustory-aarch64-unknown-linux-musl.tar.gz`
 
 3. **Verify file integrity** (recommended):
    ```bash
@@ -66,7 +66,52 @@ Download the precompiled binary for your system from [GitHub Releases](https://g
    # Windows: Extract ZIP and move rustory.exe to a directory in PATH
    ```
 
-### Method 2: Build from Source
+### Method 2: One-Click Install Script (Linux/macOS)
+
+For Linux and macOS users, we provide a convenient one-click installation script:
+
+#### Quick Install
+```bash
+# Install or update Rustory
+curl -fsSL https://raw.githubusercontent.com/uselibrary/rustory/refs/heads/master/install.sh | sudo bash
+```
+
+#### Manual Download and Install
+```bash
+# Download the script
+curl -fsSL https://raw.githubusercontent.com/uselibrary/rustory/refs/heads/master/install.sh -o install.sh
+# Make it executable and run
+chmod +x install.sh
+sudo ./install.sh install
+```
+
+#### Script Features
+- ✅ **Auto-detection**: Automatically detects OS and architecture
+- ✅ **Version management**: Checks for updates and installs the latest version
+- ✅ **Dependency check**: Verifies required tools (curl, tar, jq)
+- ✅ **Safe installation**: Downloads from official GitHub releases
+- ✅ **Uninstall support**: Easy removal with `sudo ./install.sh uninstall`
+
+#### Usage Options
+```bash
+# Install or update
+sudo ./install.sh install      # or just: sudo ./install.sh
+
+# Uninstall
+sudo ./install.sh uninstall
+
+# Show help
+./install.sh --help
+
+# Show script version
+./install.sh --version
+```
+
+#### Supported Systems
+- **Linux**: x86_64, aarch64 (with musl builds for better compatibility)
+- **macOS**: x86_64 (Intel), aarch64 (Apple Silicon)
+
+### Method 3: Build from Source
 
 #### Prerequisites
 - **Rust version**: 1.70 or above

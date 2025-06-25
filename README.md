@@ -47,7 +47,7 @@ Rustory（**Rust** + His**tory**）是一个基于 Rust 的版本控制工具，
 2. 根据您的系统选择相应的文件：
    - Windows: `rustory-x86_64-pc-windows-msvc.zip` 或 `rustory-aarch64-pc-windows-msvc.zip`
    - macOS: `rustory-x86_64-apple-darwin.tar.gz` 或 `rustory-aarch64-apple-darwin.tar.gz`
-   - Linux: `rustory-x86_64-unknown-linux-gnu.tar.gz` 或 `rustory-aarch64-unknown-linux-gnu.tar.gz`
+   - Linux: `rustory-x86_64-unknown-linux-musl.tar.gz` 或 `rustory-aarch64-unknown-linux-musl.tar.gz`
 
 3. **文件完整性校验** (推荐)：
    ```bash
@@ -68,7 +68,52 @@ Rustory（**Rust** + His**tory**）是一个基于 Rust 的版本控制工具，
    # Windows: 解压 ZIP 文件，将 rustory.exe 移动到 PATH 中的目录
    ```
 
-### 方式二：从源码编译
+### 方式二：一键安装脚本 (Linux/macOS)
+
+针对 Linux 和 macOS 用户，我们提供了便捷的一键安装脚本：
+
+#### 快速安装
+```bash
+# 安装或更新 Rustory
+curl -fsSL https://raw.githubusercontent.com/uselibrary/rustory/refs/heads/master/install.sh | sudo bash
+```
+
+#### 手动下载安装
+```bash
+# 下载安装脚本
+curl -fsSL https://raw.githubusercontent.com/uselibrary/rustory/refs/heads/master/install.sh -o install.sh
+# 设置执行权限并运行
+chmod +x install.sh
+sudo ./install.sh install
+```
+
+#### 脚本特性
+- ✅ **自动检测**: 自动识别操作系统和架构
+- ✅ **版本管理**: 检查更新并安装最新版本
+- ✅ **依赖检查**: 验证必需工具（curl、tar、jq）
+- ✅ **安全安装**: 从官方 GitHub 发布页面下载
+- ✅ **卸载支持**: 通过 `sudo ./install.sh uninstall` 轻松移除
+
+#### 使用选项
+```bash
+# 安装或更新
+sudo ./install.sh install      # 或直接: sudo ./install.sh
+
+# 卸载
+sudo ./install.sh uninstall
+
+# 显示帮助
+./install.sh --help
+
+# 显示脚本版本
+./install.sh --version
+```
+
+#### 支持的系统
+- **Linux**: x86_64、aarch64 (使用 musl 构建以获得更好的兼容性)
+- **macOS**: x86_64 (Intel)、aarch64 (Apple Silicon)
+
+### 方式三：从源码编译
 
 #### 前置要求
 - **Rust 版本**: 1.70 或更高
