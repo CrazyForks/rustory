@@ -113,8 +113,8 @@ jobs:
 
       - name: Build binary
         run: |
-          if [[ "${{ matrix.target }}" == *"musl"* ]]; then
-            # For MUSL targets, enable static linking
+          if [[ "${{ matrix.target }}" == *"musl"* && "${{ matrix.os }}" == "ubuntu-latest" ]]; then
+            # For MUSL targets on Linux, enable static linking
             export RUSTFLAGS="-C target-feature=+crt-static"
           fi
           cargo build --release --target ${{ matrix.target }}
