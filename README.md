@@ -8,7 +8,9 @@
 [![Rust](https://img.shields.io/badge/rust-1.70+-orange.svg)](https://www.rust-lang.org)
 [![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows-lightgrey.svg)](https://github.com/uselibrary/rustory)
 
-<img src="https://raw.githubusercontent.com/uselibrary/rustory/refs/heads/master/assets/rustory_logo.png" alt="rustory_logo" width="35%" />
+<div align="center">
+  <img src="https://raw.githubusercontent.com/uselibrary/rustory/refs/heads/master/assets/rustory_logo.png" alt="rustory_logo" width="50%" />
+</div>
 
 ## ✨ Project Overview
 
