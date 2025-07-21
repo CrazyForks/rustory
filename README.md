@@ -1,6 +1,6 @@
 # Rustory
 
-**[English](README_en.md)** | [简体中文](README.md)
+**[English](README.md)** | [简体中文](README_zh.md)
 
 > 🚀 **Lightweight Local Version Control Tool** - A high-performance version control system written in Rust
 
