@@ -1,6 +1,6 @@
 # Rustory
 
-[English](README_en.md) | **[简体中文](README.md)**
+[English](README.md) | **[简体中文](README_zh.md)**
 
 > 🚀 **轻量级本地版本管理工具** - 用 Rust 编写的高性能版本控制系统
 
